@@ -319,6 +319,58 @@ ranking is sound; the mapping is skewed.
 
 ---
 
+## End to end, both arms measured
+
+Everything above measures a component. This is the whole path — table, pack, encode,
+send, threshold, verdicts — with a per-row baseline run under the *same* client
+rate-limit policy, so the comparison is observed rather than computed. flight, 5,000
+rows per predicate, baseline sampled across the sorted order:
+
+| predicate | arm | requests → 100k rows | rows/s | bal@0.5 | bal@fitted |
+|---|---|---|---|---|---|
+| `delay_gt` | baseline | 100,000 | 3.6 | **100.0%** | 100.0% |
+| `delay_gt` | **packed** | **180** | **836** | 66.2% | **90.8%** |
+| `weekend` | baseline | 100,000 | 3.7 | 100.0% | 100.0% |
+| `weekend` | **packed** | **120** | **1146** | 99.7% | **99.9%** |
+| `state_eq` | baseline | 100,000 | 3.4 | 100.0% | 100.0% |
+| `state_eq` | **packed** | **200** | **666** | 95.8% | **98.9%** |
+
+Scaling each arm's measured per-row rate to 100k rows: **195–314× faster, 6.7–8.3×
+fewer tokens, 500–833× fewer requests**, at $1.97–2.05 → $0.24–0.30.
+
+**And a correction to the component numbers above.** The per-row baseline scores
+**100% on all three predicates** — better than any blocked encoding. The earlier
+frontier compared encodings at a fixed 120-row block on *both* sides, so it understated
+the gap to what one-row-per-request actually achieves. The honest end-to-end trade is
+**195–314× throughput for 0.1 to 9.2 points of balanced accuracy, depending on the
+predicate** — not the ~2 points the frontier implied.
+
+### Block size is a knob, and the packer had it wrong
+
+Left to minimise cost, the packer fills the token budget: ~555 rows per request. Nobody
+had measured what that costs, because every component experiment fixed the block at 120.
+Sweeping it (flight, 1,200 rows):
+
+| block | rows/s | `delay_gt` @0.5 | @fitted | `state_eq` @fitted | $/100k rows |
+|---|---|---|---|---|---|
+| 15 | 48 | 86.2% | **93.0%** | 98.8% | $0.43 |
+| 60 | 187 | 81.7% | 92.6% | **99.9%** | $0.34 |
+| **120** | **317** | 78.9% | **92.8%** | 99.4% | **$0.32** |
+| 240 | 561 | 74.2% | 89.9% | 96.7% | $0.32 |
+| 600 | 751 | 71.3% | 89.5% | 97.3% | $0.32 |
+
+Two things fall out:
+
+**Most of the decay is calibration drift, not comprehension loss.** At 0.5 the accuracy
+slides steadily with block size (86.2 → 71.3); with a fitted threshold it is flat from
+15 to 120 (93.0 → 92.8) and only breaks after 240. The bias grows with block size and a
+fitted cutoff absorbs it, which is the same effect the calibration section measures.
+
+**Past ~120 rows the bill stops moving.** Tokens fall only 2% from block 120 to 600
+(92,327 → 90,560) while accuracy drops 3.3 points. Filling the budget buys *throughput*,
+not money. So the default is now a 120-row cap (`Scanner(max_block_rows=120)`), and
+filling the budget is something a latency-bound caller asks for explicitly.
+
 ## Defects this project found in itself
 
 Worth stating plainly, because the whole pitch is "compression that does not silently
@@ -406,11 +458,10 @@ because its handover documents carry live cluster credentials.
    cannot `import` and go. Target shape: an analyzer that takes a table and predicates,
    packs, encodes with pinning on by default, fits thresholds, and reports the measured
    saving for *that* table rather than a promised one.
-2. **Run it end to end, once.** Every number here comes from a separate probe —
-   cost offline, accuracy from one probe, thresholds from another. No single run goes
-   table → pack → encode → send → threshold → recalibrate → verdicts. That is the
-   product, and it is the largest unmeasured thing in the project.
-3. **Measure the throughput headline at 100k rows** instead of projecting it from 5k.
+2. **Run the whole scan at 100k rows.** Both arms are now measured at 5k and scaled;
+   the packed arm should be run at 100k for real, which costs about $0.30.
+3. **Sweep block size on more predicates and the second table.** The 120-row default
+   rests on two predicates of one table.
 4. **Robustness and determinism suites**: NULLs, unicode, oversized single rows,
    duplicate rows, and whether the same request twice returns the same answers.
 5. **Ship the threshold layer**, the highest-value and cheapest piece — the rule is

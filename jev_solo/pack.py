@@ -15,7 +15,7 @@ cheap the packing can get.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterator, List, Sequence, Tuple
+from typing import Iterator, List, Optional, Sequence, Tuple
 
 from .encodings import FACTORED_PREAMBLE
 from .tokens import TokenCounter
@@ -76,8 +76,17 @@ def pack_requests(
     total_budget: int = TOTAL_BUDGET,
     state_budget: int = STATE_BUDGET,
     row_ids: bool = True,
+    max_rows: Optional[int] = None,
 ) -> Iterator[Request]:
-    """Greedily pack consecutive sorted rows into feasible requests."""
+    """Greedily pack consecutive sorted rows into feasible requests.
+
+    `max_rows` caps the block independently of the token budget. Filling to the
+    budget minimises cost and is not free: measured end to end, a budget-filled
+    block holds ~555 rows and costs 9.2 points of balanced accuracy on a signed
+    numeric comparison, against 0.1 points on an easy predicate. Block size is
+    therefore a throughput/accuracy knob, not an implementation detail, and the
+    packer must let the caller set it.
+    """
     preamble = counter(FACTORED_PREAMBLE)
     per_row_q = q_tokens * questions_per_row
 
@@ -89,6 +98,8 @@ def pack_requests(
         k = 0
         start = i
         while i < n:
+            if max_rows is not None and k >= max_rows:
+                break
             rid = f"r{k + 1}" if row_ids else ""
             delta = row_delta_tokens(header, rows[i], prev, counter, rid)
             new_state = state + delta

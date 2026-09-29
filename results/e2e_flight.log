@@ -1,0 +1,47 @@
+# table=flight  rows=5000  predicates=['delay_gt', 'weekend', 'state_eq']
+# same client policy for both arms: max_rpm=900, pin=on
+
+## delay_gt  (numeric compare, 2 cols)  n=5000
+   emit fraction of predicate columns: ArrDelay=100%, DepDelay=79%
+   packed    rows=  5000 requests=     9 tokens=   336281 $ 0.0141 wall=    6.0s (throttled    0.0s)    835.9 rows/s  failed=0
+   balanced accuracy: 66.2% at 0.5, 90.8% at fitted 0.75
+   baseline  rows=   500 requests=   500 tokens=   243969 $ 0.0102 wall=  140.5s (throttled    0.0s)      3.6 rows/s  failed=0
+   balanced accuracy: 100.0% at 0.5, 100.0% at fitted 0.95
+
+   scaling each arm's MEASURED per-row rate to 100,000 rows:
+     requests        100,000  ->       180   (556x fewer)
+     tokens       48,793,800  -> 6,725,620   (7.3x fewer)
+     cost       $       2.05  ->$     0.28
+     wall clock       468.2m  ->      2.0m   (235x faster)
+     the baseline's request count alone costs 83 min of the documented 1200/min quota
+
+## weekend  (set membership, 1 low-NDV col)  n=5000
+   emit fraction of predicate columns: DayOfWeek=0%   <- low: pinning is doing real work here
+   packed    rows=  5000 requests=     6 tokens=   283741 $ 0.0119 wall=    4.4s (throttled    0.0s)   1146.0 rows/s  failed=0
+   balanced accuracy: 99.7% at 0.5, 99.9% at fitted 0.69
+   baseline  rows=   500 requests=   500 tokens=   234394 $ 0.0098 wall=  136.9s (throttled    0.0s)      3.7 rows/s  failed=0
+   balanced accuracy: 100.0% at 0.5, 100.0% at fitted 0.94
+
+   scaling each arm's MEASURED per-row rate to 100,000 rows:
+     requests        100,000  ->       120   (833x fewer)
+     tokens       46,878,800  -> 5,674,820   (8.3x fewer)
+     cost       $       1.97  ->$     0.24
+     wall clock       456.4m  ->      1.5m   (314x faster)
+     the baseline's request count alone costs 83 min of the documented 1200/min quota
+
+## state_eq  (categorical equality, 2 cols)  n=5000
+   emit fraction of predicate columns: OriginState=52%, DestState=16%   <- low: pinning is doing real work here
+   packed    rows=  5000 requests=    10 tokens=   354366 $ 0.0149 wall=    7.5s (throttled    0.0s)    666.3 rows/s  failed=0
+   balanced accuracy: 95.8% at 0.5, 98.9% at fitted 0.35
+   baseline  rows=   500 requests=   500 tokens=   236931 $ 0.0100 wall=  146.7s (throttled    0.0s)      3.4 rows/s  failed=0
+   balanced accuracy: 100.0% at 0.5, 100.0% at fitted 0.99
+
+   scaling each arm's MEASURED per-row rate to 100,000 rows:
+     requests        100,000  ->       200   (500x fewer)
+     tokens       47,386,200  -> 7,087,320   (6.7x fewer)
+     cost       $       1.99  ->$     0.30
+     wall clock       488.9m  ->      2.5m   (195x faster)
+     the baseline's request count alone costs 83 min of the documented 1200/min quota
+
+# 1525 calls, $0.070967 billed this run
+# wrote results/e2e_flight.json
