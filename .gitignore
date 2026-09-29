@@ -1,0 +1,13 @@
+# credentials -- never commit
+.env
+.env.local
+*.key
+
+# vendored upstream + model weights
+third_party/jeff/models/
+third_party/jeff/.venv/
+
+# outputs
+results/
+__pycache__/
+*.pyc
