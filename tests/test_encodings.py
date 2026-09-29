@@ -168,3 +168,28 @@ if __name__ == "__main__":
             print(f"  FAIL  {fn.__name__}: {exc}")
     print(f"\n{len(fns) - failed}/{len(fns)} passed")
     sys.exit(1 if failed else 0)
+
+
+def test_pinned_cells_carry_their_column_name():
+    """Presence is not identification.
+
+    Pinning guarantees a predicate's value is written on every row. It does not
+    guarantee the model can tell which column that value belongs to: in a dittoed
+    row the value sits behind a run of empty fields and has to be located by
+    counting commas. Labelling closes that gap, and measured on flight it is worth
+    +9.9 points of balanced accuracy on an arithmetic predicate at a 10% token cost.
+    """
+    rows = lex_sort_rows(NASTY)
+    pin = (0, 3)
+    labelled = encode_csv_rle(HEADER, rows, row_ids=True, pin=pin, label_pinned=True)
+    bare = encode_csv_rle(HEADER, rows, row_ids=True, pin=pin, label_pinned=False)
+    # Parse rather than split on newlines: a quoted cell may legitimately contain
+    # one, and splitting would tear a valid row in half.
+    parsed = _parse_csv(labelled, has_preamble=True)
+    assert {len(r) for r in parsed} == {len(HEADER) + 1}, \
+        f"labelling broke the field count: {[len(r) for r in parsed]}"
+    for record in parsed[1:]:
+        for k in pin:
+            assert record[1 + k].startswith(f"{HEADER[k]}="), \
+                f"pinned column {HEADER[k]} unlabelled: {record[1 + k]!r}"
+    assert len(labelled) > len(bare), "labelling should cost something"

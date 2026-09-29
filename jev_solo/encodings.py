@@ -96,6 +96,7 @@ def encode_csv_rle(
     rows: Sequence[Sequence[str]],
     row_ids: bool = True,
     pin: Sequence[int] = (),
+    label_pinned: bool = True,
 ) -> str:
     """CSV with ditto: column names once, and unchanged leading cells left empty.
 
@@ -113,6 +114,16 @@ def encode_csv_rle(
     compresses, the less often its value sits near the row that needs it.
     Pinning the predicate's columns spends tokens precisely where comprehension
     needs them.
+
+    `label_pinned` renders a pinned cell as "Name=value" instead of a bare value.
+    Pinning alone guarantees the value is *present*; it does not guarantee the model
+    can tell *which column* it is. A dittoed row looks like
+
+        r2,,,,,,,,,,,,,,,,,2,-5.00,3,2023-01-03,N605LR,-8.00
+
+    and locating DepDelay means counting seventeen commas -- the same positional
+    reading that makes columnar_rle unusable. Labelling the pinned cells removes the
+    counting, for a few tokens per row.
     """
     pinned = set(pin)
     out = [CSV_RLE_PREAMBLE,
@@ -131,6 +142,10 @@ def encode_csv_rle(
             for k in pinned:  # restate the predicate's columns unconditionally
                 if k < len(row):
                     cells[k] = _rle_cell(row[k])
+        if label_pinned:
+            for k in pinned:
+                if k < len(row):
+                    cells[k] = _csv_cell(f"{header[k]}={_cell(row[k])}")
         line = ",".join(cells)
         out.append(f"r{i + 1},{line}" if row_ids else line)
         prev = row

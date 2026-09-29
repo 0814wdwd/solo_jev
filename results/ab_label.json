@@ -1,0 +1,131 @@
+{
+  "args": {
+    "table": "flight",
+    "predicates": "delay_gt,state_eq,taxi_sum",
+    "rows": 1200,
+    "block": 120,
+    "out": "results/ab_label.json"
+  },
+  "records": [
+    {
+      "predicate": "delay_gt",
+      "arm": "row_kv",
+      "block": 120,
+      "bal_half": 0.9097316883789147,
+      "bal_fit": 0.961581676165207,
+      "threshold": 0.82,
+      "billed_tokens": 285735,
+      "n": 1200
+    },
+    {
+      "predicate": "delay_gt",
+      "arm": "csv_block",
+      "block": 120,
+      "bal_half": 0.8038564403416444,
+      "bal_fit": 0.9274478482760488,
+      "threshold": 0.84,
+      "billed_tokens": 154380,
+      "n": 1200
+    },
+    {
+      "predicate": "delay_gt",
+      "arm": "csv_rle+pin",
+      "block": 120,
+      "bal_half": 0.7898369424553533,
+      "bal_fit": 0.923860513598029,
+      "threshold": 0.8,
+      "billed_tokens": 92327,
+      "n": 1200
+    },
+    {
+      "predicate": "delay_gt",
+      "arm": "csv_rle+pin+label",
+      "block": 120,
+      "bal_half": 0.8558795617289277,
+      "bal_fit": 0.9412760081764157,
+      "threshold": 0.8,
+      "billed_tokens": 101622,
+      "n": 1200
+    },
+    {
+      "predicate": "state_eq",
+      "arm": "row_kv",
+      "block": 120,
+      "bal_half": 0.9990766389658357,
+      "bal_fit": 0.9918032786885246,
+      "threshold": 0.94,
+      "billed_tokens": 268896,
+      "n": 1200
+    },
+    {
+      "predicate": "state_eq",
+      "arm": "csv_block",
+      "block": 120,
+      "bal_half": 0.9995383194829178,
+      "bal_fit": 1.0,
+      "threshold": 0.65,
+      "billed_tokens": 143507,
+      "n": 1200
+    },
+    {
+      "predicate": "state_eq",
+      "arm": "csv_rle+pin",
+      "block": 120,
+      "bal_half": 0.9909913109359092,
+      "bal_fit": 0.9851576994434137,
+      "threshold": 0.24,
+      "billed_tokens": 82550,
+      "n": 1200
+    },
+    {
+      "predicate": "state_eq",
+      "arm": "csv_rle+pin+label",
+      "block": 120,
+      "bal_half": 0.9924947321069204,
+      "bal_fit": 0.9981447124304268,
+      "threshold": 0.44,
+      "billed_tokens": 90950,
+      "n": 1200
+    },
+    {
+      "predicate": "taxi_sum",
+      "arm": "row_kv",
+      "block": 120,
+      "bal_half": 0.9898112398112398,
+      "bal_fit": 0.9907328805885682,
+      "threshold": 0.89,
+      "billed_tokens": 289497,
+      "n": 1200
+    },
+    {
+      "predicate": "taxi_sum",
+      "arm": "csv_block",
+      "block": 120,
+      "bal_half": 0.9343629343629344,
+      "bal_fit": 0.9368279569892473,
+      "threshold": 0.89,
+      "billed_tokens": 160523,
+      "n": 1200
+    },
+    {
+      "predicate": "taxi_sum",
+      "arm": "csv_rle+pin",
+      "block": 120,
+      "bal_half": 0.8881917631917632,
+      "bal_fit": 0.9134833050367854,
+      "threshold": 0.73,
+      "billed_tokens": 112982,
+      "n": 1200
+    },
+    {
+      "predicate": "taxi_sum",
+      "arm": "csv_rle+pin+label",
+      "block": 120,
+      "bal_half": 0.986969111969112,
+      "bal_fit": 0.9888936049801924,
+      "threshold": 0.8,
+      "billed_tokens": 120182,
+      "n": 1200
+    }
+  ]
+}

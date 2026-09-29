@@ -328,28 +328,54 @@ rows per predicate, baseline sampled across the sorted order:
 
 | predicate | arm | requests → 100k rows | rows/s | bal@0.5 | bal@fitted |
 |---|---|---|---|---|---|
-| `delay_gt` | baseline | 100,000 | 3.6 | **100.0%** | 100.0% |
-| `delay_gt` | **packed** | **180** | **836** | 66.2% | **90.8%** |
-| `weekend` | baseline | 100,000 | 3.7 | 100.0% | 100.0% |
-| `weekend` | **packed** | **120** | **1146** | 99.7% | **99.9%** |
-| `state_eq` | baseline | 100,000 | 3.4 | 100.0% | 100.0% |
-| `state_eq` | **packed** | **200** | **666** | 95.8% | **98.9%** |
+| `delay_gt` | baseline | 100,000 | 3.3 | **100.0%** | 100.0% |
+| `delay_gt` | **packed** | **840** | **320** | 81.0% | **95.4%** |
+| `weekend` | baseline | 100,000 | 3.4 | 100.0% | 100.0% |
+| `weekend` | **packed** | **840** | **310** | **100.0%** | **100.0%** |
+| `state_eq` | baseline | 100,000 | 3.5 | 100.0% | 100.0% |
+| `state_eq` | **packed** | **840** | **323** | 96.7% | **99.3%** |
 
-Scaling each arm's measured per-row rate to 100k rows: **195–314× faster, 6.7–8.3×
-fewer tokens, 500–833× fewer requests**, at $1.97–2.05 → $0.24–0.30.
+Scaling each arm's measured per-row rate to 100k rows: **~98× faster, 6.4× fewer
+tokens, 119× fewer requests**, $2.05 → $0.32.
 
-**And a correction to the component numbers above.** The per-row baseline scores
-**100% on all three predicates** — better than any blocked encoding. The earlier
-frontier compared encodings at a fixed 120-row block on *both* sides, so it understated
-the gap to what one-row-per-request actually achieves. The honest end-to-end trade is
-**195–314× throughput for 0.1 to 9.2 points of balanced accuracy, depending on the
-predicate** — not the ~2 points the frontier implied.
+**A correction the component numbers could not have caught.** The per-row baseline
+scores **100% on all three predicates** — better than any blocked encoding. The
+earlier frontier compared encodings at a fixed 120-row block on *both* sides, so it
+understated the gap to what one-row-per-request actually achieves. The honest
+end-to-end trade is **~98× throughput for 0 to 4.6 points of balanced accuracy,
+depending on the predicate**.
 
-### Block size is a knob, and the packer had it wrong
+### Two defects the end-to-end run exposed
 
-Left to minimise cost, the packer fills the token budget: ~555 rows per request. Nobody
-had measured what that costs, because every component experiment fixed the block at 120.
-Sweeping it (flight, 1,200 rows):
+The first version of this run scored `delay_gt` at 66.2% / 90.8%, against a baseline
+of 100%. That gap was not a property of the model. It was two defects in our own
+encoding, and both are now fixed — the numbers in the table above are the fixed ones.
+
+**Pinning guaranteed presence, not identification.** A dittoed row reads
+
+```
+r2,,,,,,,,,,,,,,,,,2,-5.00,3,2023-01-03,N605LR,-8.00
+```
+
+so locating `DepDelay` means counting seventeen commas — the same positional reading
+that makes `columnar_rle` unusable. Pinning had put the value on every row without
+making it findable. Labelling the pinned cells (`DepDelay=-5.00` in the CSV slot)
+removes the counting, and at a 120-row block on flight it is worth:
+
+| predicate | `csv_rle`+pin | **+labelled** | `row_kv` (ceiling) | tokens vs `row_kv` |
+|---|---|---|---|---|
+| `taxi_sum` @0.5 | 88.8% | **98.7%** | 99.0% | 41% |
+| `taxi_sum` @fitted | 91.3% | **98.9%** | 99.1% | |
+| `delay_gt` @0.5 | 79.0% | **85.6%** | 91.0% | 36% |
+| `delay_gt` @fitted | 92.4% | **94.1%** | 96.2% | |
+| `state_eq` @fitted | 98.5% | **99.8%** | 99.2% | 34% |
+
+`taxi_sum` gains 9.9 points and reaches the `row_kv` ceiling at 41% of its tokens;
+`state_eq` passes it. Labelling costs about 10% more tokens than bare pinning.
+It is on by default (`label_pinned=True`).
+
+**The packer filled the token budget because nothing told it not to** — ~555 rows per
+request. Sweeping block size (flight, 1,200 rows):
 
 | block | rows/s | `delay_gt` @0.5 | @fitted | `state_eq` @fitted | $/100k rows |
 |---|---|---|---|---|---|
@@ -359,17 +385,13 @@ Sweeping it (flight, 1,200 rows):
 | 240 | 561 | 74.2% | 89.9% | 96.7% | $0.32 |
 | 600 | 751 | 71.3% | 89.5% | 97.3% | $0.32 |
 
-Two things fall out:
-
-**Most of the decay is calibration drift, not comprehension loss.** At 0.5 the accuracy
-slides steadily with block size (86.2 → 71.3); with a fitted threshold it is flat from
-15 to 120 (93.0 → 92.8) and only breaks after 240. The bias grows with block size and a
-fitted cutoff absorbs it, which is the same effect the calibration section measures.
-
-**Past ~120 rows the bill stops moving.** Tokens fall only 2% from block 120 to 600
-(92,327 → 90,560) while accuracy drops 3.3 points. Filling the budget buys *throughput*,
-not money. So the default is now a 120-row cap (`Scanner(max_block_rows=120)`), and
-filling the budget is something a latency-bound caller asks for explicitly.
+Two things fall out. **Most of the decay is calibration drift, not comprehension
+loss**: at 0.5 accuracy slides steadily with block size (86.2 → 71.3), while with a
+fitted threshold it is flat from 15 to 120 (93.0 → 92.8) and only breaks after 240.
+And **past ~120 rows the bill stops moving** — tokens fall 2% from block 120 to 600
+while accuracy drops 3.3 points. Filling the budget buys throughput, not money, so
+the default is a 120-row cap and filling it is something a latency-bound caller asks
+for.
 
 ## Defects this project found in itself
 
