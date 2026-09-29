@@ -63,8 +63,9 @@ this project is:
 3. **SOLO's mathematics survived the move and turned out to be the right tool.** Its
    core quantity — how many distinct value-combinations the first *k* columns form —
    is exactly the number of times a value still has to be written down if repeats may
-   be implied. The reordering machinery transfers; we verified the resulting formula
-   predicts the real bill to within **0.5%**.
+   be implied. The reordering machinery transfers; the resulting formula predicts the
+   real bill to within **0.02–1.45%** across flight, movies and synthetic
+   low-cardinality tables.
 
 **Jev killed SOLO's mechanism, inherited SOLO's problem, and SOLO's mathematics turned
 out to fit the new form of that problem.** This project is what you build once you
@@ -326,24 +327,27 @@ send, threshold, verdicts — with a per-row baseline run under the *same* clien
 rate-limit policy, so the comparison is observed rather than computed. flight, 5,000
 rows per predicate, baseline sampled across the sorted order:
 
-| predicate | arm | requests → 100k rows | rows/s | bal@0.5 | bal@fitted |
-|---|---|---|---|---|---|
-| `delay_gt` | baseline | 100,000 | 3.3 | **100.0%** | 100.0% |
-| `delay_gt` | **packed** | **840** | **320** | 81.0% | **95.4%** |
-| `weekend` | baseline | 100,000 | 3.4 | 100.0% | 100.0% |
-| `weekend` | **packed** | **840** | **310** | **100.0%** | **100.0%** |
-| `state_eq` | baseline | 100,000 | 3.5 | 100.0% | 100.0% |
-| `state_eq` | **packed** | **840** | **323** | 96.7% | **99.3%** |
+Fitted accuracies are **held out**: the cutoff is chosen on half the rows and scored
+on the other half. (An earlier version of this table scored it on all of them, which
+flattered the packed arm by 0.7–0.9 points.)
 
-Scaling each arm's measured per-row rate to 100k rows: **~98× faster, 6.4× fewer
-tokens, 119× fewer requests**, $2.05 → $0.32.
+| predicate | arm | requests → 100k rows | rows/s | bal@0.5 | bal@fitted (held out) |
+|---|---|---|---|---|---|
+| `delay_gt` | baseline | 100,000 | 3.2 | **100.0%** | 100.0% |
+| `delay_gt` | **packed** | **840** | **287** | 81.3% | **94.7%** |
+| `weekend` | baseline | 100,000 | 3.1 | 100.0% | 100.0% |
+| `weekend` | **packed** | **840** | **308** | **100.0%** | **100.0%** |
+| `state_eq` | baseline | 100,000 | 3.1 | 100.0% | 100.0% |
+| `state_eq` | **packed** | **840** | **310** | 97.1% | **98.4%** |
+
+Scaling each arm's measured per-row rate to 100k rows: **~90–100× faster, 6.4× fewer
+tokens, 119× fewer requests**, $2.05 → $0.32 — for **0 to 5.3 points** of balanced
+accuracy, depending on the predicate.
 
 **A correction the component numbers could not have caught.** The per-row baseline
 scores **100% on all three predicates** — better than any blocked encoding. The
 earlier frontier compared encodings at a fixed 120-row block on *both* sides, so it
-understated the gap to what one-row-per-request actually achieves. The honest
-end-to-end trade is **~98× throughput for 0 to 4.6 points of balanced accuracy,
-depending on the predicate**.
+understated the gap to what one-row-per-request actually achieves.
 
 ### Two defects the end-to-end run exposed
 
@@ -415,9 +419,35 @@ failing:
   it scores near chance because the model cannot address a row, and pinning rescues it
   because pinning restores per-row ids.
 
+A second audit pass found four more, all of which also failed silently:
+
+- **A fitted threshold was scored on the rows that fitted it.** `fit()` held half the
+  rows out and `scores()` then evaluated on all of them, so every end-to-end fitted
+  accuracy was partly in-sample — worth 0.7–0.9 points. Fitted numbers are now scored
+  on the held-out half only, and the run records which rows those were.
+- **The run discarded its own probabilities**, so its accuracy could not be recomputed
+  after a fix; the numbers had to be re-measured instead of re-analysed. They are kept
+  now.
+- **The packer accounted the budget against the wrong encoding.** It modelled
+  `factored_rle` while the pipeline sent `csv_rle`, which on flight costs 1.79× less,
+  so it packed 411 rows where 600 fitted and never reached the budget it thought it
+  was filling. It now measures the encoding it is actually given.
+- **The cost formula was right by cancellation, not by construction.** Charging the
+  row-id prefix and the field separator as separate strings overcounted both, which on
+  flight happened to cancel an undercount elsewhere and produced a flattering 0.5%.
+  On synthetic low-cardinality data the same formula was off by 8%. Measuring rendered
+  strings instead of assembled pieces brings it to 0.02–1.45% across three tables.
+
+One more is documented rather than fixed: `columnar_rle` separates runs with `", "`,
+which collides with values that contain a comma — `OriginCityName` on all 4,000 flight
+rows sampled, and 44 movie titles. Since that encoding is already established as
+unusable, it is recorded rather than repaired. `row_kv` and `factored_rle` use `" | "`
+and `^`, neither of which occurs in any value in either table.
+
 The lesson is the obvious one: this project had no tests until after all of those
-measurements were taken. It has them now (`tests/`), and CI runs the offline half on
-every push.
+measurements were taken. It has them now (11 in `tests/`), and CI runs the offline half
+on every push. Every defect above was found by reading and testing the code, not by
+anything failing.
 
 ## Limits
 

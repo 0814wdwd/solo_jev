@@ -193,3 +193,54 @@ def test_pinned_cells_carry_their_column_name():
             assert record[1 + k].startswith(f"{HEADER[k]}="), \
                 f"pinned column {HEADER[k]} unlabelled: {record[1 + k]!r}"
     assert len(labelled) > len(bare), "labelling should cost something"
+
+
+def test_packer_accounts_for_the_encoding_it_is_given():
+    """The budget must be measured against what will actually be sent.
+
+    The incremental fallback models factored_rle. Sending csv_rle while accounting
+    in factored_rle costs 1.79x on flight, so the packer silently under-packs and
+    never reaches the budget it believes it is filling. With encode_fn the reported
+    state_tokens is the measured one.
+    """
+    rng = np.random.default_rng(3)
+    header = [f"c{i}" for i in range(14)]
+    rows = lex_sort_rows([[str(rng.integers(0, 6)) for _ in header] for _ in range(800)])
+    counter = get_counter("cl100k_base")
+    enc = lambda h, blk: encode_csv_rle(h, blk, row_ids=True, pin=(0, 13))
+
+    reqs = list(pack_requests(header, rows, counter, q_tokens=24, encode_fn=enc))
+    assert sum(r.n_rows for r in reqs) == len(rows)
+    for r in reqs:
+        actual = counter(enc(header, rows[r.start:r.end]))
+        assert r.state_tokens == actual, \
+            f"reported {r.state_tokens} tokens, encoding is {actual}"
+        if r.n_rows > 1:
+            assert actual + 24 <= STATE_BUDGET
+
+    # And it must pack at least as much per request as the proxy-based fallback,
+    # since the proxy overestimates this encoding.
+    fallback = list(pack_requests(header, rows, counter, q_tokens=24))
+    assert max(r.n_rows for r in reqs) >= max(r.n_rows for r in fallback)
+
+
+def test_fitted_threshold_is_scored_out_of_sample():
+    """A cutoff must not be scored on the rows that chose it."""
+    from jev_solo.pipeline import ArmResult, Scanner
+
+    rng = np.random.default_rng(4)
+    n = 400
+    y = (rng.random(n) < 0.3).astype(int)
+    # probabilities that carry signal but are biased high, like the real ones
+    p = np.clip(0.55 + 0.3 * y + rng.normal(0, 0.12, n), 0.01, 0.99)
+    res = ArmResult("packed", n, 1, 0, 0.0, 0.0, 0)
+    res.probs["q"] = [float(v) for v in p]
+    res.truth["q"] = [int(v) for v in y]
+
+    Scanner.fit(res, frac=0.5, seed=0)
+    assert res.holdout["q"], "fit must record which rows were held out"
+    assert len(res.holdout["q"]) == n - n // 2
+    assert res.n_scored(True)["q"] == len(res.holdout["q"])
+    assert res.n_scored(False)["q"] == n
+    # the held-out score is computed on strictly fewer rows than the full set
+    assert res.n_scored(True)["q"] < res.n_scored(False)["q"]

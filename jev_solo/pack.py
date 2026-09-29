@@ -15,7 +15,7 @@ cheap the packing can get.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterator, List, Optional, Sequence, Tuple
+from typing import Callable, Iterator, List, Optional, Sequence, Tuple
 
 from .encodings import FACTORED_PREAMBLE
 from .tokens import TokenCounter
@@ -77,21 +77,58 @@ def pack_requests(
     state_budget: int = STATE_BUDGET,
     row_ids: bool = True,
     max_rows: Optional[int] = None,
+    encode_fn: Optional[Callable[[Sequence[str], Sequence[Sequence[str]]], str]] = None,
+    stride: int = 32,
 ) -> Iterator[Request]:
     """Greedily pack consecutive sorted rows into feasible requests.
 
     `max_rows` caps the block independently of the token budget. Filling to the
-    budget minimises cost and is not free: measured end to end, a budget-filled
-    block holds ~555 rows and costs 9.2 points of balanced accuracy on a signed
-    numeric comparison, against 0.1 points on an easy predicate. Block size is
-    therefore a throughput/accuracy knob, not an implementation detail, and the
-    packer must let the caller set it.
+    budget minimises cost and is not free: block size is a throughput/accuracy
+    knob, not an implementation detail, so the packer must let the caller set it.
+
+    `encode_fn` is the encoder whose output will actually be sent. Pass it, or the
+    budget is accounted against the wrong serialization: the incremental fallback
+    models `factored_rle`, which on flight costs 1.79x what `csv_rle` costs for the
+    same block, so a caller sending csv_rle under-packs by that factor and never
+    reaches the budget it thinks it is filling.
     """
     preamble = counter(FACTORED_PREAMBLE)
     per_row_q = q_tokens * questions_per_row
 
     i = 0
     n = len(rows)
+
+    if encode_fn is not None:
+        # Grow by `stride` rows, measuring the real encoding, then back off to the
+        # last block that fits. Approximate only at the stride boundary; the token
+        # count reported is the measured one.
+        while i < n:
+            k = 0
+            fitted_tokens = 0
+            cap = n - i if max_rows is None else min(n - i, max_rows)
+            while k < cap:
+                probe = min(cap, k + stride)
+                tokens = counter(encode_fn(header, rows[i:i + probe]))
+                if (tokens + q_tokens <= state_budget
+                        and tokens + probe * per_row_q <= total_budget):
+                    k, fitted_tokens = probe, tokens
+                    continue
+                # shrink one row at a time from the last good point
+                for trial in range(probe - 1, k, -1):
+                    tokens = counter(encode_fn(header, rows[i:i + trial]))
+                    if (tokens + q_tokens <= state_budget
+                            and tokens + trial * per_row_q <= total_budget):
+                        k, fitted_tokens = trial, tokens
+                        break
+                break
+            if k == 0:  # even one row does not fit: emit it alone and report it
+                k = 1
+                fitted_tokens = counter(encode_fn(header, rows[i:i + 1]))
+            yield Request(start=i, end=i + k, state_tokens=fitted_tokens,
+                          question_tokens=k * per_row_q)
+            i += k
+        return
+
     while i < n:
         state = preamble
         prev = None

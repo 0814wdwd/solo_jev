@@ -100,12 +100,22 @@ def analytic_factored_cost(
     for k, c in enumerate(col_order):
         field_tokens += groups[k] * float(field_weights[c])
 
+    # field_weights include the " | " separator, but the first field emitted on a
+    # line has none -- it follows the row id or the "^ " marker. One separator per
+    # row is therefore charged and never written.
+    field_tokens -= n_rows * counter(" | ")
+
     rowid_tokens = 0.0
     if row_ids:
+        # Measure the rendered prefix as one string. Charging "\nrN: " and the "^"
+        # ditto marker separately overcounts by ~1.8x, because the tokenizer merges
+        # across that boundary -- the same piecewise-counting error that
+        # rendered_field_weights exists to avoid, which this term had kept.
         probe = min(n_rows, 2000)
-        per_probe = sum(counter(f"\nr{i + 1}: ") for i in range(probe))
-        rowid_tokens = per_probe * (n_rows / max(1, probe))
-        rowid_tokens += max(0, n_rows - 1) * counter("^")
+        first = counter(f"\nr1: ")
+        rest = sum(counter(f"\nr{i + 1}: ^ ") for i in range(1, probe))
+        per_row = (first + rest) / max(1, probe)
+        rowid_tokens = per_row * n_rows
 
     overhead = counter(FACTORED_PREAMBLE)
     total = field_tokens + rowid_tokens + overhead

@@ -75,6 +75,10 @@ class ArmResult:
     probs: Dict[str, List[float]] = field(default_factory=dict)
     truth: Dict[str, List[int]] = field(default_factory=dict)
     thresholds: Dict[str, float] = field(default_factory=dict)
+    # Rows NOT used to fit the threshold. scores(fitted=True) must be read on these
+    # only: scoring a fitted cutoff on the rows that chose it reports an in-sample
+    # number, which is how a threshold layer flatters itself.
+    holdout: Dict[str, List[int]] = field(default_factory=dict)
 
     @property
     def usd(self) -> float:
@@ -86,15 +90,28 @@ class ArmResult:
         return self.wall_s - self.throttled_s
 
     def scores(self, fitted: bool = True) -> Dict[str, float]:
+        """Balanced accuracy. With fitted=True, on held-out rows only."""
         out = {}
         for name, ps in self.probs.items():
             p = np.asarray(ps, dtype=float)
             y = np.asarray(self.truth[name], dtype=float)
             if len(p) == 0:
                 continue
-            t = self.thresholds.get(name, 0.5) if fitted else 0.5
+            if fitted:
+                hold = self.holdout.get(name)
+                if hold:
+                    p, y = p[hold], y[hold]
+                t = self.thresholds.get(name, 0.5)
+            else:
+                t = 0.5
+            if len(p) == 0:
+                continue
             out[name] = bal_acc((p >= t).astype(float), y)
         return out
+
+    def n_scored(self, fitted: bool = True) -> Dict[str, int]:
+        return {name: (len(self.holdout.get(name, ps)) if fitted else len(ps))
+                for name, ps in self.probs.items()}
 
     def summary(self) -> str:
         rps = self.rows / self.wall_s if self.wall_s else 0.0
@@ -197,9 +214,15 @@ class Scanner:
         t_wall = time.time()
         before_throttle = self.client.throttled_s
 
+        # Budget accounted against the encoding actually sent, not a proxy for it.
+        def _enc(h, blk):
+            return encode_csv_rle(h, blk, row_ids=True,
+                                  pin=tuple(pins) if self.pin else ())
+
         for req in pack_requests(planned_header, ordered, self.counter,
                                  q_tokens=self.q_tokens,
-                                 max_rows=self.max_block_rows):
+                                 max_rows=self.max_block_rows,
+                                 encode_fn=_enc):
             block = ordered[req.start:req.end]
             state = encode_csv_rle(planned_header, block, row_ids=True,
                                    pin=tuple(pins) if self.pin else ())
@@ -236,6 +259,7 @@ class Scanner:
             idx = rng.permutation(len(p))
             cut = int(len(idx) * frac)
             res.thresholds[name] = fit_threshold(p[idx[:cut]], y[idx[:cut]])
+            res.holdout[name] = [int(i) for i in idx[cut:]]
         return res.thresholds
 
     def emit_report(self, header: Sequence[str], rows: Sequence[Sequence[str]],

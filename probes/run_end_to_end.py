@@ -93,25 +93,30 @@ def main() -> None:
         packed = scanner.run_packed(header, usable, pred)
         scanner.fit(packed)
         print("   " + packed.summary())
-        print(f"   balanced accuracy: {packed.scores(False)[pname]*100:.1f}% at 0.5, "
+        print(f"   balanced accuracy: {packed.scores(False)[pname]*100:.1f}% at 0.5 "
+              f"(n={packed.n_scored(False)[pname]}), "
               f"{packed.scores(True)[pname]*100:.1f}% at fitted "
-              f"{packed.thresholds[pname]:.2f}")
+              f"{packed.thresholds[pname]:.2f} (held out, n={packed.n_scored(True)[pname]})")
 
         base = None
         if not args.skip_baseline:
             base = scanner.run_baseline(header, usable, pred, limit=args.baseline_limit)
             scanner.fit(base)
             print("   " + base.summary())
-            print(f"   balanced accuracy: {base.scores(False)[pname]*100:.1f}% at 0.5, "
+            print(f"   balanced accuracy: {base.scores(False)[pname]*100:.1f}% at 0.5 "
+                  f"(n={base.n_scored(False)[pname]}), "
                   f"{base.scores(True)[pname]*100:.1f}% at fitted "
-                  f"{base.thresholds[pname]:.2f}")
+                  f"{base.thresholds[pname]:.2f} (held out, n={base.n_scored(True)[pname]})")
 
+        # Keep the probabilities: without them the run cannot be re-analysed
+        # offline, and an earlier version of this script discarded them, which
+        # meant its own accuracy numbers could not be recomputed after a fix.
         rec = {"predicate": pname, "emit": emit,
-               "packed": {k: v for k, v in vars(packed).items() if k != "probs"},
+               "packed": vars(packed),
                "packed_bal_half": packed.scores(False).get(pname),
                "packed_bal_fit": packed.scores(True).get(pname)}
         if base:
-            rec["baseline"] = {k: v for k, v in vars(base).items() if k != "probs"}
+            rec["baseline"] = vars(base)
             rec["baseline_bal_half"] = base.scores(False).get(pname)
             rec["baseline_bal_fit"] = base.scores(True).get(pname)
 
