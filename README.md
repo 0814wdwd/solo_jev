@@ -1,705 +1,365 @@
-# jev-solo
+# Structure-Aware Relational Analysis for Decision Models
 
-Run a per-row judgement over a large relational table on a **decision model**, without
-paying to write the same text down a million times — and without silently trading
-away the answers' correctness to do it.
+Extending SOLO's data reordering and structural-reuse ideas to decision-model inference
+over large tables.
 
-Status: early (v0.1.0). The offline half — encodings, the cost model, planning,
-packing — is installable and tested. The end-to-end pipeline is not packaged yet; see
-[Next](#next). Everything below is measured against the real API; nothing is quoted
-from a vendor page unless it says so.
+Running a hundred thousand semantic judgements over one table: efficiency depends not
+only on how fast the model is, but on how the data is organised, shared and fed to it.
 
-```bash
-pip install -e ".[dev]"     # offline parts need only numpy + tiktoken
+SOLO-Jev takes SOLO as its methodological basis and organises row/column reordering,
+task-aware encoding, request packing and decision calibration into a single pipeline for
+table inference. It exploits the repeated structure in relational data to reduce input
+and request overhead, while using key-field retention and quality evaluation to control
+the effect of compression and batching on the judgements.
+
+In one scan of nearly a hundred thousand rows against a public API, the system processed
+99,400 rows in 1,657 requests, taking 543 seconds. That result comes from a complete run
+of a single predicate on the flight table; the configuration, quality metrics and
+comparison basis are given below.
+
+**Structure-aware planning · Task-aware compression · Budget-constrained packing ·
+Decision-quality evaluation**
+
+Project stage: research prototype. This repository is aimed at method reproduction,
+execution optimisation and experimental evaluation.
+
+---
+
+## Background
+
+SOLO studies a problem that is easy to overlook: for the same relational table,
+different data arrangements lead to different model execution costs.
+
+In conventional LLM serving, SOLO reorders a table's rows and columns so that adjacent
+requests share a longer prefix, increasing prefix-cache reuse. What it exploits is not a
+change in the text content, but the repeated structure of the relational data itself.
+
+SOLO-Jev extends this idea to decision models. Jev can handle multiple questions against
+one shared state, so the same relational data need not be split into independent per-row
+requests; it can instead be organised into input blocks that share information.
+
+Under the OpenRouter/Jev configuration tested, the experiments observed no cross-request
+prefix-cache benefit, so this project optimises around information reuse within a
+request, rather than relying on server-side cache acceleration.
+
+### The structural statistic
+
+A key statistic in SOLO is G^(k): the number of distinct value combinations formed by the
+first k columns under a given column order. It characterises the shareable prefix
+structure in the table.
+
+Under the corresponding sorting and elision encoding, this structure also determines how
+many times a field has to be written out explicitly; its normalised form G^(k)/N
+characterises the explicit-write ratio. Row/column planning therefore becomes more than a
+change of input order: it can also be used to analyse representation cost, and to
+determine which fields need particular protection after compression.
+
+SOLO provides the methodological basis for organising reusable structure; SOLO-Jev adds
+input representation, request execution and result calibration around the decision model.
+
+---
+
+## Pipeline
+
+SOLO-Jev treats a table scan as an execution pipeline that needs planning and evaluation,
+not merely a repeated model call for every row.
+
+```
+relational table + predicate definitions
+        ↓
+field projection and SOLO row/column planning
+        ↓
+task-aware encoding: reuse repeated information, keep key fields explicit
+        ↓
+budget-constrained blocking and request packing
+        ↓
+Jev shared-state decision inference
+        ↓
+per-predicate thresholds, probability calibration and result evaluation
+```
+
+### Structure-aware planning
+
+Using the value distribution and prefix-combination structure of the relational table,
+plan the row and column order so that reusable information forms a contiguous shared
+structure in the encoding.
+
+The accompanying cost model measures the actually rendered input rather than merely
+comparing raw string lengths. In the reported validation settings on the flight, movies
+and synthetic low-cardinality tables, the error between predicted cost and actual billing
+is 0.02–1.45%.
+
+### Task-aware compression
+
+The goal of compression is not only to reduce tokens, but to let the model locate the
+evidence for the current row's judgement.
+
+SOLO-Jev distinguishes inputs by the field dependencies a predicate declares: repeated
+non-critical content can be shared; the fields required for the judgement are kept
+explicit on every row through pinning; and field labels further let the model identify
+which column a value belongs to, rather than relying on positional counting alone.
+
+This design addresses two problems at once: whether the required information is present,
+and whether it can be identified correctly. In the taxi_sum diagnostic experiment on the
+flight table, adding labels to already-pinned fields raised balanced accuracy from 88.8%
+to 98.7%, with input tokens about 41% of the row_kv encoding at the same block size.
+
+### Budget-constrained packing
+
+Combine multiple rows and their questions into requests that satisfy the input budget,
+amortising the per-request fixed overhead. In the original experimental configuration,
+each request carries about 260 fixed billed tokens, so per-row requests pay that cost
+repeatedly.
+
+Block size affects both throughput and judgement quality. The system's experimental
+pipeline supports comparing different block sizes rather than equating "filling the
+context" with the optimal configuration. The near-hundred-thousand-row run below uses
+60-row blocks; larger blocks are used in other throughput and accuracy experiments.
+
+### Decision-quality evaluation
+
+The model's probability and the final verdict are two different output layers. SOLO-Jev
+evaluates the decision threshold separately per predicate, and checks the effect of the
+threshold and of probability calibration on held-out data.
+
+Across 84 experimental cells on the flight table, fitting the threshold against balanced
+accuracy raised overall balanced accuracy from 86.6% to 89.3%. In a separate set of
+probability-calibration experiments, Platt scaling reduced held-out ECE from 0.097 to
+0.025, with a corresponding AUC of 0.954.
+
+Threshold and probability calibration are evaluable configuration items: the benefit
+varies by predicate and needs to be confirmed on held-out data.
+
+---
+
+## Results
+
+The following results answer three separate questions: execution efficiency, input
+representation and task quality. The configurations across the tables are not identical,
+and the best value in each should not be read as achieved simultaneously under one
+configuration.
+
+### Execution at near-hundred-thousand-row scale
+
+The subject is one predicate on the flight table, executed in full through the public API
+with 60-row blocks.
+
+| item | value |
+|---|---|
+| rows | 99,400 |
+| requests | 1,657 |
+| billed input tokens | 3,929,704 (39.5 per row) |
+| recorded cost | $0.1650 |
+| wall clock | 543.0 s (183 rows/s) |
+| balanced accuracy at 0.5 | 100.0% |
+| rows without an answer | 0 |
+
+Compared with one request per row, the number of requests is reduced by about 60x.
+Against a separately measured per-row baseline throughput of 3.1 rows/s, the throughput
+ratio is about 59x. The comparison basis is an independently measured per-row processing
+rate; what was executed in full at the 99,400-row scale is the packed scheme.
+
+This run validates the execution behaviour of one predicate at near-hundred-thousand-row
+scale; it does not imply that all semantic tasks reach the same accuracy. The cost is the
+actual record of the original experiment, not a commitment about current service pricing.
+
+### Input encodings
+
+On two real table structures, flight and movies, the experiments compared different input
+encodings. The token ratios below are relative to row_kv on the corresponding table, and
+the accuracies are the balanced accuracies reported in the original experiments.
+
+| encoding | flight accuracy | flight tokens | movies accuracy | movies tokens |
+|---|---|---|---|---|
+| `row_kv` | 96.8% | 100% | 98.5% | 100% |
+| `csv_block` | 95.8% | 54% | 98.1% | 74% |
+| `csv_rle` | 88.2% | 41% | 97.0% | 65% |
+| `csv_rle` + pinning | 94.9% | 41% | 98.6% | 65% |
+
+This set of results supports using task-aware retention to improve judgement quality
+after compression, but the size of the saving depends on the table structure. A 0.1-point
+difference on the movies table should not be interpreted as a stable accuracy improvement.
+
+The row_kv here also uses blocked input; it is not the baseline that processes one row per
+request. The two kinds of comparison answer different questions.
+
+In a separate ablation on the flight table, after batching, reducing repeated column
+labels and run-length compression, SOLO reordering further reduced token overhead from
+19.4% to 17.6% of the per-row baseline, i.e. about 9% less on top of the existing
+compression. The benefit of the full pipeline comes from a combination of stages; the
+incremental benefit of reordering is characterised separately by this ablation.
+
+### Structural diagnosis
+
+When a field is rarely written out explicitly, the model has to recover its value across
+rows. Structural diagnostic experiments show that this kind of compression can damage
+judgement quality, and that explicitly retaining task-relevant fields improves the result
+significantly.
+
+| predicate (movies) | explicit-write ratio | `csv_rle` | `csv_rle` + pinning |
+|---|---|---|---|
+| `lang_en` | 23% | 93.1% | 100.0% |
+| `is_action` | 2% | 62.8% | 100.0% |
+
+The movies experiment above supplies the flag column required for the judgement as input,
+in order to examine the representation; it differs from the semantic experiment in the
+next section, which hides the genre label and judges the genre from the title alone.
+
+Across 52 paired experimental cells over two real table structures and two sampling
+settings, the original experiments observed no case where pinning caused more than a
+one-point loss of accuracy. This supports treating it as the encoding configuration to
+evaluate first, but does not constitute a lossless guarantee for arbitrary tasks.
+
+---
+
+## Applicable tasks
+
+SOLO-Jev targets per-row analysis that requires model knowledge or semantic judgement —
+for example judging a film's genre from its title, judging which queue a support ticket
+belongs to, or checking the semantic consistency of a text record. Of these, this document
+provides measured results for film-genre judgement; the other examples describe task
+shapes.
+
+The movies experiment hides the genre flag, supplies only the title to the model, and
+compares against a TF-IDF classifier over the same titles:
+
+| predicate | base rate | TF-IDF | Jev |
+|---|---|---|---|
+| is it an action film | 0.443 | 52.9% | 83.2% |
+| is it a comedy | 0.335 | 58.6% | 90.9% |
+| is it a drama | 0.338 | 56.5% | 79.0% |
+| is it a horror film | 0.044 | 50.0% | 90.6% |
+
+The TF-IDF and Jev columns report balanced accuracy; the average input overhead for this
+set of experiments is 34 tokens per row. It is used to show the decision backend's ability
+on tasks that require additional knowledge, not to measure SOLO reordering's contribution
+on its own.
+
+Deterministic conditions should still be handled by SQL or local code. For example
+`ArrDelay > DepDelay` and `revenue > budget` can already be computed directly from the
+input columns. This project uses such predicates for structural, encoding and
+numeric-judgement diagnostics because they provide unambiguous ground truth; they are not
+application scenarios that require calling a model.
+
+---
+
+## Installation and reproduction
+
+This project is positioned as a research prototype, containing offline planning and
+encoding modules, real-API probe scripts and result-analysis entry points. The offline
+installation and reproduction flow is listed first; for the availability of the unified
+scan interface and online calibration, refer to the implementation of the version in use.
+
+From the repository root:
+
+```
+python -m pip install -e ".[dev]"
 python -m pytest tests/ -q
 ```
 
----
+The offline parts depend mainly on numpy and tiktoken, and need no API key or network
+access.
 
-## What this is, in plain terms
+```
+python3 -m jev_solo.bench_offline --csv table.csv --rows 5000
+```
 
-You have a table with hundreds of thousands of rows, and you want to ask every row a
-question that SQL cannot answer: *is this record internally consistent? does this row
-contradict itself? is this complaint about billing?* SQL does not judge, so a model
-has to look at each row.
+```
+# decision threshold: fitted per experimental configuration, averaged over several splits
+python3 -m jev_solo.threshold
 
-The naive way is one request per row. A hundred thousand rows is a hundred thousand
-requests — slow, and enormously repetitive, because those requests are nearly
-identical to one another.
+# probability calibration: ECE, temperature scaling and Platt calibration
+python3 -m jev_solo.calibration
 
-**Jev** (TypeSafe AI, released September 2026) is a new kind of model aimed exactly at
-this. It does not write text. You hand it a blob of data and a list of typed
-questions, and it hands back numbers — probabilities and typed answers — evaluating
-every question in one parallel pass. It is roughly two orders of magnitude cheaper
-and faster than a frontier LLM at repetitive decision work, and **output tokens are
-free**: you pay only for what you send in.
+# cross-table structural comparison
+python3 -m jev_solo.cross_table
 
-Think of it as a judge with a checklist rather than a writer. You pass it a page of
-records and a list of yes/no questions; it passes back a score sheet.
+# check local classifier baselines
+python3 probes/baseline_classifiers.py
+```
 
-**SOLO** ([ICML 2026](#citing)) attacked the same repetition on conventional LLM
-serving. Those systems cache the *beginning* of a prompt they just processed, so if
-the next prompt starts with the same text the model can skip re-reading it. SOLO
-reorders a table's rows and columns so neighbouring prompts share the longest possible
-common beginning, and the cache hits far more often. Like sorting a stack of forms so
-consecutive forms have identical top halves, letting the clerk say "same as above".
+The result-analysis entry points require the corresponding experimental records; the
+commands themselves do not replace data preparation or online measurement.
 
-### How the three relate — which is not what we expected
+### Defining your own table
 
-Jev looks tailor-made for SOLO's problem, so the obvious move is to port SOLO to Jev.
-We measured, and the port does not work the way you would guess. That finding is what
-this project is:
+Define a `TableSpec` in `jev_solo/datasets.py`, configuring the data file, the input
+projection and the predicates, and provide a `truth` function for evaluation.
 
-1. **SOLO's engine does not exist on Jev.** There is no prefix cache at all. Four
-   conditions — identical state, edited tail, edited head, brand new state — eight
-   repeats each: the bill and the latency are indistinguishable (4323 vs 4324 tokens,
-   291 vs 288 ms). Sorting rows to hit a cache is pointless when there is no cache.
+When the ground-truth label lives in a column the model should not see, use `truth_cols`
+to separate the evaluation label from the model input, avoiding label leakage.
 
-2. **The waste did not disappear; it moved.** Jev charges for what you send, and lets
-   you put many rows and many questions into one request. So the waste is no longer
-   "recomputing a prefix" — it is "writing the same thing down over and over inside
-   the request you send". Same disease, different organ.
+### Connecting to a model
 
-3. **SOLO's mathematics survived the move and turned out to be the right tool.** Its
-   core quantity — how many distinct value-combinations the first *k* columns form —
-   is exactly the number of times a value still has to be written down if repeats may
-   be implied. The reordering machinery transfers; the resulting formula predicts the
-   real bill to within **0.02–1.45%** across flight, movies and synthetic
-   low-cardinality tables.
+Configure the key in `.env.local` following `.env.local.example`. The original experiments
+called `typesafe/jev-1.13` through OpenRouter; the connection is managed by
+`probes/jev_client.py`.
 
-**Jev killed SOLO's mechanism, inherited SOLO's problem, and SOLO's mathematics turned
-out to fit the new form of that problem.** This project is what you build once you
-know that.
+`probes/mock_server.py` provides a key-free protocol mock service that can be used to
+check the request and response flow; it is not for validating a real model's accuracy or
+throughput.
 
 ---
 
-## What it does
+## Repository layout
 
-**1. Pack.** Stop sending one request per row. Every request carries ~260 tokens of
-fixed overhead no matter how small it is, and that is billed per request. Packing a
-scan into budget-feasible requests turned 5,000 requests into 27.
+```
+jev_solo/
+  datasets.py          tables, field projections and predicate definitions
+  tokens.py            token measurement and rendered-field weights
+  objective.py         SOLO structural statistics and the analytic cost model
+  plan.py              row/column planning implementations
+  encodings.py         state encodings and key-field retention
+  pack.py              request packing under the input budget
+  bench_offline.py     offline cost evaluation
+  threshold.py         decision-threshold analysis
+  calibration.py       probability-calibration analysis
+  analyze_accuracy.py  accuracy-cost comparison and mechanism diagnosis
+  cross_table.py       cross-table structural evaluation
 
-**2. Compress, carefully.** Inside a request, stop repeating what you need not repeat:
-write column names once, and where a value repeats down a sorted column, leave it
-blank to mean "same as above". SOLO's reordering earns its place here — it maximises
-how much can be left blank.
+probes/                real API, protocol mock and experimental probes
+results/               raw experimental records
+tests/                 serialization and related regression tests
+```
 
-**3. Read the output properly.** The model returns probabilities, not verdicts. Its
-probabilities are systematically shifted, so the obvious "above 0.5 means yes" gives
-wrong answers. Fitting the cutoff per predicate and recalibrating the probabilities
-fixes that at zero extra API cost.
+These modules cover structural planning, input representation, execution budget and result
+evaluation respectively.
 
 ---
 
-## The core finding
+## Limitations
 
-**Compression and correctness fight each other, in a precise and predictable way.**
+The current evidence covers two real table structures, flight and movies, plus a synthetic
+table used to control cardinality. The main online results come from the same Jev backend
+accessed through OpenRouter; they cannot yet establish that the findings hold for all
+decision models, data distributions or tasks.
 
-If a column's repeated values are elided, the model has to look far up the page to
-recover the value — and it gets it wrong. The predictor is a column's **emit
-fraction**: how often its value is actually written down, which for sorted rows is
-exactly SOLO's G^(k)/N.
+Compression and batching involve a quality trade-off. Pinning and field labels improve the
+identifiability of the input, but do not eliminate all multi-row judgement error. In one
+setting of `delay_gt`, a 30-row block achieved 96.5% balanced accuracy at 56.2 tokens per
+row, while single-row requests achieved 100.0% at 338.0 tokens per row.
 
-- emitted on **100%** of rows → compression costs nothing
-- emitted on **23%** → accuracy starts to slip
-- emitted on **2%** → balanced accuracy collapses from ~100% to **60-63%**, barely
-  better than guessing
+Evaluation must account for model variability. Repeated requests, question order and
+row-ID changes can all affect the result; in the original experiments, differences smaller
+than about 1.5 points on some fitted metrics approach the observed noise level.
+Configuration choices should therefore combine repeated measurement, held-out evaluation
+and the task's tolerance for error, rather than comparing single best values.
 
-The better a column compresses, the less often its value sits near the row that needs
-it. Compression and failure are the same phenomenon.
-
-**The fix is cheap and absolute: never elide the columns the question actually reads.**
-Compress everything else. It costs **under 1% more tokens** and restores accuracy in
-full — 62.8% → 100% on our worst case.
-
-> You may abbreviate the parts of a form nobody will check. Not the box the inspector
-> is reading.
-
-Verified on two unrelated schemas, both sampling regimes, **52 paired cells, harmful in
-zero of them.** So the library should pin by default, and a caller never has to reason
-about emit fraction to be safe.
+Use of an external API must also comply with data-access permissions and privacy
+requirements. Sensitive data should not be sent to an unapproved service merely because it
+can be compressed and packed.
 
 ---
 
-## What it is for
+## Relation to SOLO
 
-**Semantic per-row judgements over a large table.** The case this exists for is a
-question whose answer is not in the columns you send: give a film's title and ask what
-kind of film it is, give a support ticket and ask which queue it belongs in, give an
-address and ask whether it is plausible. Measured on film titles, with the genre flag
-withheld from the input so the answer cannot be read off the data:
+The methodological basis of this project comes from SOLO:
 
-| predicate | base rate | TF-IDF on the same titles | **Jev** | AUC |
-|---|---|---|---|---|
-| is it an action film | 0.443 | 52.9% | **83.2%** | 0.914 |
-| is it a comedy | 0.335 | 58.6% | **90.9%** | 0.965 |
-| is it a drama | 0.338 | 56.5% | **79.0%** | 0.871 |
-| is it a horror film | 0.044 | 50.0% | **90.6%** | 0.951 |
+> Prefix-Cache-Aware Data Reordering for LLM-Augmented Database Analytics.
 
-At **34 tokens per row**. The margin over the text classifier is world knowledge about
-the film, which no model trained on the titles alone has.
+SOLO-Jev focuses on the extended implementation and experimental evaluation of this
+data-organisation idea in a decision-model execution setting. The original SOLO paper code
+and this repository are maintained separately.
 
-**Scope note.** If a predicate is a deterministic function of the columns you are
-sending — `ArrDelay > DepDelay`, `revenue > budget` — evaluate it in SQL. The
-predicates used to benchmark this project are of that kind, because ground truth then
-comes from the table with nothing to annotate; they measure the machinery, not the use
-case. `probes/baseline_classifiers.py` reports where the line falls on your own
-workload.
-
-### What the machinery buys, once you are in the right case
-
-**Throughput, not money.** Scanning 100k rows costs about $2.05 naively and $0.32
-packed, and nobody starts a project to save $2. But the provider caps requests at
-**1,200/minute**: one request per row means a 100k-row table spends **83 minutes**
-clearing the request quota alone. Packed, that is a couple of minutes.
-
-**Aggressive compression made safe.** Without pinning, compression wrecks accuracy
-*silently* — nothing errors, you simply get plausible wrong probabilities. Pinning has
-never cost more than a point in 52 paired cells across two schemas, and it also makes
-accuracy schema-stable: unpinned encodings swing 6.5–8.8 points between tables, pinned
-ones 2.0–3.7.
-
-**Free accuracy from reading the output correctly.** +2.7 points overall, +5.7 on
-selective predicates, zero extra API calls — provided the cutoff is fitted against
-*balanced* accuracy. Fitted for raw accuracy it collapses to "always no" on 45% of runs.
-
-**Probabilities you can consume.** After an affine recalibration, ECE 0.100 → 0.025
-with AUC 0.954, which is what makes a selectivity estimate possible.
-
-### How much noise is in all of these numbers
-
-**Jev is not deterministic.** The identical request, repeated, moves an individual
-probability by up to **0.48**; reordering the questions moves it 0.15; renumbering the
-row ids 0.56. That propagates into far less movement at the metric level, but not none:
-repeating a full 1,200-row measurement five times gives
-
-| predicate | bal@0.5 sd | bal@fitted sd | fitted range over 5 runs |
-|---|---|---|---|
-| `delay_gt` | 0.33 pt | 0.74 pt | **2.3 pt** |
-| `weekend` | 0.00 pt | 0.13 pt | 0.3 pt |
-
-**So differences below about 1.5 points on a fitted number are not meaningful**, and
-several comparisons in this README sit near that line — including the 1.8-point gain
-from narrowing the projection and shrinking the block. Comparisons that clearly survive
-the noise: pinning (+5 to +37), labelling pinned cells (+9.9 on `taxi_sum`), the
-threshold objective (50.0 vs 81.0 on selective predicates), and Jev over TF-IDF on the
-semantic predicates (+25 to +35).
-
-## Quickstart
-
-```bash
-pip install -e ".[dev]"     # offline parts need only numpy + tiktoken
-python -m pytest tests/ -q  # 28 tests, no key and no network
-```
-
-The library, with the measured defaults already applied — pinned and labelled columns,
-a 60-row block, the predicate's own columns projected down:
-
-```python
-from jev_solo import Scan, datasets
-
-table = datasets.get("movies")
-scan  = Scan(table, ["is_comedy"])
-
-scan.calibrate(rows[:600], header=header)   # labelled sample -> threshold (+ Platt)
-result = scan.run(rows, header=header)
-
-print(result.report())
-verdicts = result.verdicts["is_comedy"]         # bool per row
-p        = result.calibrated["is_comedy"]       # recalibrated probabilities
-```
-
-`report()` states the measured cost and throughput **for your table**, not a headline:
-the saving is schema-dependent (41% of `row_kv` tokens on flight, 65% on movies), so a
-promised number would be wrong for somebody. It also warns when a predicate's columns
-are being elided and pinning is off, since that failure is silent.
-
-**Bring your own table** by adding a `TableSpec` to `jev_solo/datasets.py`: the file, a
-projection, and predicates carrying a `truth` callable. Set `truth_cols` when ground
-truth lives in a column the model must not see — that is how the semantic predicates
-above are graded.
-
-Offline analysis, no key required:
-
-```bash
-python3 -m jev_solo.bench_offline --csv table.csv --rows 5000   # what would this cost?
-python3 -m jev_solo.threshold      # fitted cutoffs, averaged over splits
-python3 -m jev_solo.calibration    # ECE against a noise floor, Platt refit
-python3 -m jev_solo.cross_table    # is the rule schema-specific?
-python3 probes/baseline_classifiers.py   # would a tree do this for free?
-```
-
-Against a real endpoint, put a key in `.env.local` (see `.env.local.example`); Jev is
-reachable through OpenRouter as `typesafe/jev-1.13`. Probes also run with **no key at
-all** against `probes/mock_server.py`, a stdlib mock of the wire protocol.
-
-## What we measured
-
-All figures below come from **784 calls, $0.55 total**, against `typesafe/jev-1.13`
-via OpenRouter. Accuracy figures use balanced accuracy with thresholds fitted per cell
-on held-out halves, averaged over 10–20 train/test splits — a single split moves a cell
-by 1–2 points, enough to flip conclusions, so single-split numbers are not reported.
-
-### The billing model
-
-```
-billed  ~=  260 per request  +  slope_enc x state_tokens  +  (9 + instruction) per question
-```
-
-- **260 tokens of fixed overhead per request**, measured near zero rather than
-  extrapolated (a naive regression intercept says 424, which is wrong).
-- **9.00 tokens per extra question**, exactly linear over n = 1…32, plus the
-  instruction's own tokens. Keep per-row predicates terse.
-- `slope_enc` is per encoding (1.29–1.50 against cl100k), R² = 0.998.
-- `cost == input_tokens/1e6 × $0.042` exactly; output free. Vendor pricing confirmed.
-- Warm latency **239–316 ms**, flat in state size to 31k tokens. A first-ever call took
-  31 s; that is provisioning, not steady state.
-- **State as a JSON object costs 2.8×** the same content as a string. Send strings.
-- Documented budgets: 64k tokens per request, 32k for state plus the longest question.
-
-### No cross-request cache, and no question-count ceiling
-
-Cache: billed tokens 4323 vs 4324 (ratio 1.000), latency 291 vs 288 ms, across the four
-conditions above. Neither channel shows a hit on either layer.
-
-Questions: from 1 to 512 nouls against a fixed 120-row state, latency goes 298 → 420 ms
-(1.41×) while per-decision latency falls 298 → **0.82 ms**, a 363× improvement. Pack as
-many rows per request as the 32k state budget allows.
-
-### Where the savings come from (flight, 5,000 rows × 110 cols)
-
-Baseline is one request per row: 5,000 requests, 6,167,773 billed tokens, $0.2590 — of
-which **21.1% is pure per-request overhead**.
-
-| step | % of baseline | cumulative |
-|---|---|---|
-| batching rows at all | 79.7% | 1.25× |
-| + dropping per-row column labels | 24.4% | 4.1× |
-| + run-length compression | 19.4% | 5.2× |
-| + reordering | 17.6% | **5.70×** |
-
-Requests: 5,000 → 29 (172× fewer). **Reordering — SOLO's actual contribution — is the
-smallest of the three effects, about 1.1×.** We would rather say that than oversell the
-lineage.
-
-### Accuracy vs cost
-
-7 predicates × 7 encodings × 360 rows per cell, two redundancy regimes (consecutive
-rows from the sorted file; random rows):
-
-| encoding | flight | movies | tokens (flight / movies) | note |
-|---|---|---|---|---|
-| `row_kv` (SOLO's prompt shape) | 96.8% | 98.5% | 100% / 100% | accuracy ceiling |
-| `csv_block` | 95.8% | 98.1% | 54% / 74% | no ditto, no risk |
-| **`csv_rle` + pin** | **94.9%** | **98.6%** | **41% / 65%** | **recommended default** |
-| `columnar_rle` + pin | 94.4% | 96.4% | 45% / 69% | best worst case (87.4%) |
-| `factored_rle` | 91.5% | 98.0% | 67% / 79% | |
-| `csv_rle` (no pin) | 88.2% | 97.0% | 41% / 65% | unsafe without pin |
-| `columnar_rle` | 63.9% | 67.2% | 42% / 66% | **unusable** |
-
-`csv_rle`+pin is Pareto-optimal on both tables and on movies edges out `row_kv`
-outright. **The policy transfers; the size of the saving does not** — 41% of `row_kv`
-tokens on flight, 65% on movies, because fewer columns and wider values mean per-row
-labels are a smaller share of the bill. Ship the encoding default, measure the saving.
-
-### The mechanism, with a control that could have falsified it
-
-Pinning can only matter where columns are actually being elided, so it must be a large
-win at low emit fraction and a no-op at high. On each table independently:
-
-| table | emit < 25% | emit ≥ 75% |
-|---|---|---|
-| flight | 75.3 → 98.9 (**+23.6**) | 92.5 → 93.6 (+1.1) |
-| movies | 90.7 → 96.0 (**+5.3**) | 99.5 → 99.6 (+0.2) |
-
-Per predicate the effect is sharper than the bucket means: `is_action` on movies, whose
-flag is emitted on 2% of rows, goes **62.8% → 100%**. `columnar_rle`+pin gains at
-*both* emit levels on both tables, which correctly separates its defect — the
-transposition, not the ditto.
-
-### A third schema, with the cardinality set rather than found
-
-flight and movies agree on the policy, but they are two points found in the wild. The
-`synthetic` table sets column cardinality explicitly — 2, 4, 16, 64, 256, n — so emit
-fraction becomes a variable we choose rather than one we observe, and the claim
-"emit fraction predicts the damage" can be tested as a causal chain rather than a
-correlation across two anecdotes. 360 rows per cell, random sampling:
-
-| predicate | column cardinality | emit | `csv_rle` | **`csv_rle`+pin** | `row_kv` |
-|---|---|---|---|---|---|
-| `a_gt_b` | numeric pair | 100% | 92.2% | 95.6% | 96.4% |
-| **`low_card`** | **4** | **7%** | **50.6%** | **100.0%** | 100.0% |
-| `mid_card` | 64 | 99% | 91.7% | 96.7% | 97.8% |
-| `high_card` | 256 | 100% | 89.4% | 97.8% | 98.1% |
-
-The cardinality-4 column sorts into long runs, is written on **7% of rows**, and its
-predicate lands at **50.6% — chance**. Pinning takes it to **100.0%**. We set the
-cardinality, which set the emit fraction, which set the damage, and pinning removed it
-exactly: the chain runs forwards, not just correlates.
-
-`csv_rle`+pin tracks `row_kv` within 0.3–2.1 points on every predicate here at about
-two thirds of the tokens.
-
-### The decision threshold
-
-Over all 84 flight cells:
-
-| rule | balanced acc | accuracy | cells collapsing to one class |
-|---|---|---|---|
-| `p ≥ 0.5` | 86.6% | 88.6% | 2/84 |
-| fitted for **accuracy** | 87.0% | 92.7% | **4/84** |
-| fitted for **balanced accuracy** | **89.3%** | 89.1% | **0/84** |
-
-On the 14 cells with base rate < 0.15 — the normal case for a `WHERE` clause — the
-balanced objective is what rescues it: 75.3% → 81.0% with no collapses, against 73.5%
-and three collapses for the accuracy objective. Fitted thresholds span **0.09 to 0.99**
-(mean 0.65), so no single global cutoff serves a workload, and 0.5 is nowhere near the
-centre.
-
-The worst case makes the trap concrete. `state_eq` in the high-redundancy regime, base
-rate 0.128, averaged over 20 splits: fitting for accuracy gives the table's best
-accuracy (88.2%) and its worst classifier — it answers "no" to everything on **45%** of
-splits. Fitting for balanced accuracy: 71.5%, never collapsing.
-
-### Calibration
-
-Pooled over 12,600 non-degenerate predictions: **ECE 0.100 against a resampling noise
-floor of 0.007**, and the model **over-predicts** (mean 0.357 vs base rate 0.263). That
-independently reproduces a published third-party figure (0.107 against a 0.024 floor) on
-a different task.
-
-Miscalibration tracks compression more steeply than accuracy does — `row_kv` 0.063 →
-`columnar_rle` 0.197, with pinning recovering much of it (→ 0.113).
-
-Temperature alone barely helps (T = 0.70, ECE 0.097 → 0.075), because what is wrong is a
-*bias* and no temperature moves a bias. Adding the intercept fixes it: Platt scaling
-`a = 1.35, b = −1.10` takes held-out ECE **0.097 → 0.025** with **AUC 0.954**. The
-ranking is sound; the mapping is skewed.
-
----
-
-## End to end, both arms measured
-
-Everything above measures a component. This is the whole path — table, pack, encode,
-send, threshold, verdicts — with a per-row baseline run under the *same* client
-rate-limit policy, so the comparison is observed rather than computed. flight, 5,000
-rows per predicate, baseline sampled across the sorted order:
-
-Fitted accuracies are **held out**: the cutoff is chosen on half the rows and scored
-on the other half. (An earlier version of this table scored it on all of them, which
-flattered the packed arm by 0.7–0.9 points.)
-
-| predicate | arm | requests → 100k rows | rows/s | bal@0.5 | bal@fitted (held out) |
-|---|---|---|---|---|---|
-| `delay_gt` | baseline | 100,000 | 3.2 | **100.0%** | 100.0% |
-| `delay_gt` | **packed** | **840** | **287** | 81.3% | **94.7%** |
-| `weekend` | baseline | 100,000 | 3.1 | 100.0% | 100.0% |
-| `weekend` | **packed** | **840** | **308** | **100.0%** | **100.0%** |
-| `state_eq` | baseline | 100,000 | 3.1 | 100.0% | 100.0% |
-| `state_eq` | **packed** | **840** | **310** | 97.1% | **98.4%** |
-
-Scaling each arm's measured per-row rate to 100k rows: **~90–100× faster, 6.4× fewer
-tokens, 119× fewer requests**, $2.05 → $0.32 — for **0 to 5.3 points** of balanced
-accuracy, depending on the predicate.
-
-**A correction the component numbers could not have caught.** The per-row baseline
-scores **100% on all three predicates** — better than any blocked encoding. The
-earlier frontier compared encodings at a fixed 120-row block on *both* sides, so it
-understated the gap to what one-row-per-request actually achieves.
-
-### Measured at 100k rows, through the public API
-
-The throughput headline was arithmetic on 5,000-row measurements. Run for real:
-
-```
-99,400 rows x 1 predicate on flight
-  1,657 requests, 3,929,704 billed tokens ($0.1650), 39.5 tokens/row
-  543.0s wall (0.0s waiting on the rate limiter), 183 rows/s, zero failures
-  balanced accuracy 100.0% at 0.5, 99.8% at the calibrated threshold 0.97
-```
-
-**Nine minutes.** The per-row baseline runs at a measured 3.1 rows/s, so the same scan
-one row at a time is **8.6 hours**, and its 99,400 requests alone consume 83 minutes of
-the documented 1,200/min quota. That is **~59x**, against the **~90-100x** the 5k
-numbers projected.
-
-The projection overstated it by about 1.7x, and the reason is ours, not the model's:
-the 5k runs used the old 120-row block default and packed 119 rows per request, while
-this one uses the current 60-row default. Halving the block doubles the requests and
-roughly halves rows/s. That is exactly the accuracy/throughput trade documented above,
-showing up in a headline number — which is the argument for measuring rather than
-scaling.
-
-One more thing worth recording: **the calibrated threshold was slightly worse than 0.5
-here** (99.8% against 100.0%). When a predicate is already at ceiling, a cutoff fitted
-on 600 rows can only add noise. Calibration earns its keep on hard predicates; on easy
-ones it is a wash or a small loss.
-
-### Where the remaining gap actually is
-
-A blocked `row_kv` scores 96.2% on `delay_gt` where one row per request scores 100%, so
-most of the gap is not the compression and not the ditto convention. Two things were
-tested to close it.
-
-**Pushing the projection down is a cost win, not an accuracy win.** A predicate over two
-columns was being handed a 20-column projection, inherited from SOLO's setup where wide
-rows are the point. `Predicate.cols` already declares what the question reads, so the
-scan can send only that. Measured on flight at a 120-row block:
-
-| projection | `csv_rle`+pin+label | `row_kv` | tokens/row (compressed) |
-|---|---|---|---|
-| 2 cols (minimal) | **94.8%** | 94.1% | **49.7** |
-| 6 cols | 91.8% | 94.8% | 50.9 |
-| 12 cols | 91.5% | 93.7% | 58.0 |
-| 22 cols | 94.1% | **97.0%** | 84.7 |
-
-**1.7× cheaper and roughly accuracy-neutral** — and note `row_kv` got *worse* on a narrow
-projection, so extra context was helping it. Not the gap-closer it looked like.
-
-**The gap is row binding, and it is bought back with block size.** At a minimal
-projection, sweeping the block:
-
-| block | requests (1,200 rows) | bal@0.5 | bal@fitted | tokens/row |
-|---|---|---|---|---|
-| **1** | 1,200 | **100.0%** | **100.0%** | **338.0** |
-| 10 | 120 | 95.3% | 94.0% | 74.6 |
-| **30** | 40 | **97.0%** | **96.5%** | 56.2 |
-| 60 | 20 | 93.7% | 95.6% | 51.6 |
-| 120 | 10 | 93.1% | 94.3% | 49.7 |
-
-A single row per request reaches 100% **under the compressed encoding too**, so the
-ceiling belongs to asking about one row at a time, not to `row_kv` and not to a wide
-projection. Its 338 tokens per row are almost entirely the 260-token per-request
-overhead: batching's saving *is* amortizing that overhead.
-
-Narrow projection plus a 30-row block gives **96.5% at 56.2 tokens/row against the
-baseline's 100% at 338** — 6× cheaper for 3.5 points, where the earlier configuration
-gave 5.3. The default block is now 60, a compromise that is not badly wrong on either
-a narrow or a wide projection; `probes/sweep_block_size.py` produces the curve for a
-specific predicate, which is the only honest way to choose.
-
-**The remaining 3.5 points does not go away.** Asking about many rows in one request
-costs something on a hard predicate, and no encoding, projection or threshold recovers
-it. It is also predicate-specific: `weekend` and `state_eq` are at 100% with 120-row
-blocks. So the tool's job is to measure the curve per predicate and let the caller
-choose a point on it, not to pretend the trade does not exist.
-
-### Two defects the end-to-end run exposed
-
-The first version of this run scored `delay_gt` at 66.2% / 90.8%, against a baseline
-of 100%. That gap was not a property of the model. It was two defects in our own
-encoding, and both are now fixed — the numbers in the table above are the fixed ones.
-
-**Pinning guaranteed presence, not identification.** A dittoed row reads
-
-```
-r2,,,,,,,,,,,,,,,,,2,-5.00,3,2023-01-03,N605LR,-8.00
-```
-
-so locating `DepDelay` means counting seventeen commas — the same positional reading
-that makes `columnar_rle` unusable. Pinning had put the value on every row without
-making it findable. Labelling the pinned cells (`DepDelay=-5.00` in the CSV slot)
-removes the counting, and at a 120-row block on flight it is worth:
-
-| predicate | `csv_rle`+pin | **+labelled** | `row_kv` (ceiling) | tokens vs `row_kv` |
-|---|---|---|---|---|
-| `taxi_sum` @0.5 | 88.8% | **98.7%** | 99.0% | 41% |
-| `taxi_sum` @fitted | 91.3% | **98.9%** | 99.1% | |
-| `delay_gt` @0.5 | 79.0% | **85.6%** | 91.0% | 36% |
-| `delay_gt` @fitted | 92.4% | **94.1%** | 96.2% | |
-| `state_eq` @fitted | 98.5% | **99.8%** | 99.2% | 34% |
-
-`taxi_sum` gains 9.9 points and reaches the `row_kv` ceiling at 41% of its tokens;
-`state_eq` passes it. Labelling costs about 10% more tokens than bare pinning.
-It is on by default (`label_pinned=True`).
-
-**The packer filled the token budget because nothing told it not to** — ~555 rows per
-request. Sweeping block size (flight, 1,200 rows):
-
-| block | rows/s | `delay_gt` @0.5 | @fitted | `state_eq` @fitted | $/100k rows |
-|---|---|---|---|---|---|
-| 15 | 48 | 86.2% | **93.0%** | 98.8% | $0.43 |
-| 60 | 187 | 81.7% | 92.6% | **99.9%** | $0.34 |
-| **120** | **317** | 78.9% | **92.8%** | 99.4% | **$0.32** |
-| 240 | 561 | 74.2% | 89.9% | 96.7% | $0.32 |
-| 600 | 751 | 71.3% | 89.5% | 97.3% | $0.32 |
-
-Two things fall out. **Most of the decay is calibration drift, not comprehension
-loss**: at 0.5 accuracy slides steadily with block size (86.2 → 71.3), while with a
-fitted threshold it is flat from 15 to 120 (93.0 → 92.8) and only breaks after 240.
-And **past ~120 rows the bill stops moving** — tokens fall 2% from block 120 to 600
-while accuracy drops 3.3 points. Filling the budget buys throughput, not money, so
-the default is a 120-row cap and filling it is something a latency-bound caller asks
-for.
-
-## Defects this project found in itself
-
-Worth stating plainly, because the whole pitch is "compression that does not silently
-break correctness", and all three were found by auditing rather than by anything
-failing:
-
-- **CSV values were never escaped.** A value containing a comma added a field and
-  shifted every later column out of alignment with the header. On flight that was
-  *every row* (`OriginCityName` = "Hartford, CT"). Re-running the affected
-  measurements after the fix moved balanced accuracy by at most 1.8 points, and the
-  unaffected control (`row_kv`) moved 0.5 on its own, so **the conclusions did not
-  change** — the model turned out to be robust to the misalignment. The defect was
-  still real, and on a table with a different column order it would not have been
-  harmless.
-- **An empty cell was indistinguishable from "same as above".** A genuine NULL was
-  silently read as the previous row's value. flight carries 34 empty `DepDelay` and 40
-  empty `ArrDelay` per 2000 rows. Fixed with an explicit `\N` sentinel.
-- **`columnar_rle` never emitted per-row ids at all**, despite announcing them. The
-  test suite found the structural cause of a result we had only observed empirically:
-  it scores near chance because the model cannot address a row, and pinning rescues it
-  because pinning restores per-row ids.
-
-A second audit pass found four more, all of which also failed silently:
-
-- **A fitted threshold was scored on the rows that fitted it.** `fit()` held half the
-  rows out and `scores()` then evaluated on all of them, so every end-to-end fitted
-  accuracy was partly in-sample — worth 0.7–0.9 points. Fitted numbers are now scored
-  on the held-out half only, and the run records which rows those were.
-- **The run discarded its own probabilities**, so its accuracy could not be recomputed
-  after a fix; the numbers had to be re-measured instead of re-analysed. They are kept
-  now.
-- **The packer accounted the budget against the wrong encoding.** It modelled
-  `factored_rle` while the pipeline sent `csv_rle`, which on flight costs 1.79× less,
-  so it packed 411 rows where 600 fitted and never reached the budget it thought it
-  was filling. It now measures the encoding it is actually given.
-- **The cost formula was right by cancellation, not by construction.** Charging the
-  row-id prefix and the field separator as separate strings overcounted both, which on
-  flight happened to cancel an undercount elsewhere and produced a flattering 0.5%.
-  On synthetic low-cardinality data the same formula was off by 8%. Measuring rendered
-  strings instead of assembled pieces brings it to 0.02–1.45% across three tables.
-
-One more is documented rather than fixed: `columnar_rle` separates runs with `", "`,
-which collides with values that contain a comma — `OriginCityName` on all 4,000 flight
-rows sampled, and 44 movie titles. Since that encoding is already established as
-unusable, it is recorded rather than repaired. `row_kv` and `factored_rle` use `" | "`
-and `^`, neither of which occurs in any value in either table.
-
-The lesson is the obvious one: this project had no tests until after all of those
-measurements were taken. It has them now (11 in `tests/`), and CI runs the offline half
-on every push. Every defect above was found by reading and testing the code, not by
-anything failing.
-
-## Limits
-
-- **Two tables, one planner, one model, through a proxy.** flight and movies agree on
-  the policy but not the saving. Two schemas show the policy is not a flight artifact;
-  they cannot predict a third. All runs use `solo_greedy` as the planner and reach Jev
-  through OpenRouter.
-- **The throughput headline is a projection** from 5,000-row measurements, not a 100k
-  measurement.
-- **Costs rest on a fitted slope** with up to 8.2% residual, so cost differences under
-  ~10% between encodings are not resolvable.
-- **Jev is weak on signed numeric comparison** — `delay_gt` reaches 98.0% only with a
-  fitted threshold, and relational predicates are mostly numbers and dates.
-- **The cache result is a negative one through a proxy.** A positive finding there would
-  have been confounded by OpenRouter; a negative one is not, but a TypeSafe-direct key
-  would close it properly.
-- **Calibration is measured, not shipped.** The Platt layer is not implemented.
-
----
-
-## Layout
-
-```
-jev_solo/            the framework (offline parts need no key, no network)
-  datasets.py        tables and predicates: the public interface
-  tokens.py          pluggable token counters; rendered-field weights
-  encodings.py       six state encodings, incl. pin= on the compressed ones
-  objective.py       G^(k), the analytic cost, and its validation
-  plan.py            column planners: default, random, ndv, solo_greedy, token_greedy*
-  pack.py            packing sorted rows into 64k/32k-feasible requests
-  bench_offline.py   what would this table cost?
-  rescore.py         the same under the measured billing model
-  threshold.py       fitted decision thresholds, averaged over splits
-  calibration.py     ECE with a noise floor, temperature and Platt refits
-  analyze_accuracy.py  accuracy-cost frontier and the mechanism test
-  cross_table.py     is the rule schema-specific?
-
-probes/              against the real API, a mock, or a self-hosted stand-in
-  jev_client.py      wire schema; picks TypeSafe or OpenRouter from --base-url
-  mock_server.py     stdlib mock of the protocol — validates probes with no key
-  probe_accuracy_scaled.py   accuracy by encoding, any table via --table
-  probe_pinned.py    emit fraction as mechanism, and pinning
-  probe_decompose.py question ensembles and extract-then-compute, with controls
-  probe_cache.py / probe_parallel.py / probe_tokenize.py / probe_overhead.py
-  probe_latency_shape.py / probe_openrouter_smoke.py
-
-tests/               regression tests for the serialization layer
-third_party/jeff/    MIT self-hosted stand-in, cloned on demand by setup_jeff.sh
-results/             every raw measurement behind the numbers above, tracked in git
-```
-
-The SOLO paper's own code is **not** in this repository — it lives separately
-because its handover documents carry live cluster credentials.
-
----
-
-## Next
-
-1. **Package the pipeline.** The capability is spread across probe scripts; a user
-   cannot `import` and go. Target shape: an analyzer that takes a table and predicates,
-   packs, encodes with pinning on by default, fits thresholds, and reports the measured
-   saving for *that* table rather than a promised one.
-2. **Run the whole scan at 100k rows.** Both arms are now measured at 5k and scaled;
-   the packed arm should be run at 100k for real, which costs about $0.30.
-3. **Sweep block size on more predicates and the second table.** The 120-row default
-   rests on two predicates of one table.
-4. **Robustness and determinism suites**: NULLs, unicode, oversized single rows,
-   duplicate rows, and whether the same request twice returns the same answers.
-5. **Ship the threshold layer**, the highest-value and cheapest piece — the rule is
-   settled (fit per predicate against balanced accuracy, never likelihood).
-6. **Implement Platt recalibration** per (question type, encoding), then measure
-   selectivity error end to end.
-7. **A second planner and a second model.** Three schemas settle "not one table's
-   artifact"; they do not settle "general". `scripts/setup_jeff.sh` and
-   `probes/jeff_rule_check.py` wire up an open stand-in, but GLiFormer 400M is at
-   chance on row-addressed questions, so answering this needs Laya, OpenJev, or a
-   cross-version Jev comparison.
-8. **Baselines.** The first question any user asks is "why not a fine-tuned
-   classifier, or an LLM with structured output, or a SQL heuristic?" We cannot
-   currently answer it.
-9. `probe_cache.py` with a TypeSafe-direct key.
-
----
-
-## Citing
-
-The reordering machinery comes from:
-
-> Yingze Li et al. *Prefix-Cache-Aware Data Reordering for LLM-Augmented Database
-> Analytics.* ICML 2026 (submission #10824).
-
-Note honestly that this project reuses SOLO's combinatorial core while its central
-mechanism — cross-request prefix-cache reuse — does not exist on Jev.
-
-## Sources for the vendor-documented limits
-
-Jev 1.13, `POST /v1/systemone`, $0.042/M input tokens (output free), 250k tokens/s and
-1,200 req/min (dynamic), 64k per request / 32k for state plus the longest question, text
-only, no documented caching, no batch endpoint — <https://docs.typesafe.ai/models> and
-<https://docs.typesafe.ai/introduction>. Through OpenRouter the model id is
-`typesafe/jev-1.13` on `POST /alpha/decisions` (`typesafe/jev-latest` does not exist
-there). The wire schema is pinned from `third_party/jeff/src/jeff/core/schemas.py`,
-whose docstring states it matches `typesafe_sdk/_schemas/models.py`.
-
----
-
-## Internal notes (HIT group)
-
-- **Do not run inference on the 210 code machine.** `/home/ubuntu/lyz/资源总览.md`
-  reserves it for code and infra, and its disk is full — which is why the GLiFormer
-  inference belongs on xtra3090 or the DCU node. `jeff`'s venv and weights take
-  ~7.8G under `third_party/` (gitignored); delete it when done and re-run
-  `scripts/setup_jeff.sh` if needed.
-- Jev cannot be self-hosted: no weights, no on-prem, no paper. Open stand-ins are
-  `jeff` (vendored), Laya and OpenJev.
-- `jeff` defaults cap `JEFF_MAX_QUESTIONS=64` and `JEFF_MAX_STATE_CHARS=20000`, far
-  below Jev's budgets. Raise both or it rejects exactly the large blocks this is about.
-- DMV / OP_DTL / GA / Food live on the DCU and 3090 nodes, not here; only flight and
-  movies are local, which is why the cross-schema check uses those two.
-- Never send `/home/ubuntu/ycr/` clinical data to any external API.
+When citing this project, please also cite the original SOLO research and the repository
+version used.
