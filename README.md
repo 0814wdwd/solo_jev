@@ -4,9 +4,15 @@ Run a per-row judgement over a large relational table on a **decision model**, w
 paying to write the same text down a million times — and without silently trading
 away the answers' correctness to do it.
 
-Status: research code with measured results, not a packaged library yet. Everything
-below is measured against the real API; nothing is quoted from a vendor page unless
-it says so.
+Status: early (v0.1.0). The offline half — encodings, the cost model, planning,
+packing — is installable and tested. The end-to-end pipeline is not packaged yet; see
+[Next](#next). Everything below is measured against the real API; nothing is quoted
+from a vendor page unless it says so.
+
+```bash
+pip install -e ".[dev]"     # offline parts need only numpy + tiktoken
+python -m pytest tests/ -q
+```
 
 ---
 
@@ -313,6 +319,32 @@ ranking is sound; the mapping is skewed.
 
 ---
 
+## Defects this project found in itself
+
+Worth stating plainly, because the whole pitch is "compression that does not silently
+break correctness", and all three were found by auditing rather than by anything
+failing:
+
+- **CSV values were never escaped.** A value containing a comma added a field and
+  shifted every later column out of alignment with the header. On flight that was
+  *every row* (`OriginCityName` = "Hartford, CT"). Re-running the affected
+  measurements after the fix moved balanced accuracy by at most 1.8 points, and the
+  unaffected control (`row_kv`) moved 0.5 on its own, so **the conclusions did not
+  change** — the model turned out to be robust to the misalignment. The defect was
+  still real, and on a table with a different column order it would not have been
+  harmless.
+- **An empty cell was indistinguishable from "same as above".** A genuine NULL was
+  silently read as the previous row's value. flight carries 34 empty `DepDelay` and 40
+  empty `ArrDelay` per 2000 rows. Fixed with an explicit `\N` sentinel.
+- **`columnar_rle` never emitted per-row ids at all**, despite announcing them. The
+  test suite found the structural cause of a result we had only observed empirically:
+  it scores near chance because the model cannot address a row, and pinning rescues it
+  because pinning restores per-row ids.
+
+The lesson is the obvious one: this project had no tests until after all of those
+measurements were taken. It has them now (`tests/`), and CI runs the offline half on
+every push.
+
 ## Limits
 
 - **Two tables, one planner, one model, through a proxy.** flight and movies agree on
@@ -358,27 +390,40 @@ probes/              against the real API, a mock, or a self-hosted stand-in
   probe_cache.py / probe_parallel.py / probe_tokenize.py / probe_overhead.py
   probe_latency_shape.py / probe_openrouter_smoke.py
 
-third_party/jeff/    vendored MIT self-hosted stand-in (GLiFormer 400M)
-solo_code/           the original SOLO code, collected — see solo_code/INDEX.md
-results/             every raw measurement behind the numbers above
+tests/               regression tests for the serialization layer
+third_party/jeff/    MIT self-hosted stand-in, cloned on demand by setup_jeff.sh
+results/             every raw measurement behind the numbers above, tracked in git
 ```
+
+The SOLO paper's own code is **not** in this repository — it lives separately
+because its handover documents carry live cluster credentials.
 
 ---
 
 ## Next
 
-1. **Package it.** The capability is spread across probe scripts; a user cannot
-   `import` and go. Target shape: an analyzer that takes a table and predicates, packs,
-   encodes with pinning on by default, fits thresholds, and reports the measured saving
-   for *that* table rather than a promised one.
-2. **Ship the threshold layer**, the highest-value and cheapest piece — the rule is
+1. **Package the pipeline.** The capability is spread across probe scripts; a user
+   cannot `import` and go. Target shape: an analyzer that takes a table and predicates,
+   packs, encodes with pinning on by default, fits thresholds, and reports the measured
+   saving for *that* table rather than a promised one.
+2. **Run it end to end, once.** Every number here comes from a separate probe —
+   cost offline, accuracy from one probe, thresholds from another. No single run goes
+   table → pack → encode → send → threshold → recalibrate → verdicts. That is the
+   product, and it is the largest unmeasured thing in the project.
+3. **Measure the throughput headline at 100k rows** instead of projecting it from 5k.
+4. **Robustness and determinism suites**: NULLs, unicode, oversized single rows,
+   duplicate rows, and whether the same request twice returns the same answers.
+5. **Ship the threshold layer**, the highest-value and cheapest piece — the rule is
    settled (fit per predicate against balanced accuracy, never likelihood).
-3. **Implement Platt recalibration** per (question type, encoding), then measure
+6. **Implement Platt recalibration** per (question type, encoding), then measure
    selectivity error end to end.
-4. **A third and fourth schema**, and a second planner. Two tables settle "not an
-   artifact"; they do not settle "general".
-5. **Measure the throughput claim at 100k rows** instead of projecting it.
-6. `probe_cache.py` with a TypeSafe-direct key.
+7. **A third and fourth schema**, a second planner, and a second model (`jeff` is
+   wired up and has never been run). Two tables settle "not an artifact"; they do not
+   settle "general".
+8. **Baselines.** The first question any user asks is "why not a fine-tuned
+   classifier, or an LLM with structured output, or a SQL heuristic?" We cannot
+   currently answer it.
+9. `probe_cache.py` with a TypeSafe-direct key.
 
 ---
 
