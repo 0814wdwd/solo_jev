@@ -1,2 +1,2 @@
 # flight/weekend: calibrating on 600, scanning 99,400
-# calibrated in 3.8s: threshold=0.97, platt(a=3.00, b=-0.60), ECE 0.017->0.000, AUC=1.000
+# calibrated in 4.7s: threshold=0.97, platt(a=3.00, b=-0.80), ECE 0.018->0.000, AUC=1.000

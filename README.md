@@ -328,6 +328,29 @@ flag is emitted on 2% of rows, goes **62.8% → 100%**. `columnar_rle`+pin gains
 *both* emit levels on both tables, which correctly separates its defect — the
 transposition, not the ditto.
 
+### A third schema, with the cardinality set rather than found
+
+flight and movies agree on the policy, but they are two points found in the wild. The
+`synthetic` table sets column cardinality explicitly — 2, 4, 16, 64, 256, n — so emit
+fraction becomes a variable we choose rather than one we observe, and the claim
+"emit fraction predicts the damage" can be tested as a causal chain rather than a
+correlation across two anecdotes. 360 rows per cell, random sampling:
+
+| predicate | column cardinality | emit | `csv_rle` | **`csv_rle`+pin** | `row_kv` |
+|---|---|---|---|---|---|
+| `a_gt_b` | numeric pair | 100% | 92.2% | 95.6% | 96.4% |
+| **`low_card`** | **4** | **7%** | **50.6%** | **100.0%** | 100.0% |
+| `mid_card` | 64 | 99% | 91.7% | 96.7% | 97.8% |
+| `high_card` | 256 | 100% | 89.4% | 97.8% | 98.1% |
+
+The cardinality-4 column sorts into long runs, is written on **7% of rows**, and its
+predicate lands at **50.6% — chance**. Pinning takes it to **100.0%**. We set the
+cardinality, which set the emit fraction, which set the damage, and pinning removed it
+exactly: the chain runs forwards, not just correlates.
+
+`csv_rle`+pin tracks `row_kv` within 0.3–2.1 points on every predicate here at about
+two thirds of the tokens.
+
 ### The decision threshold
 
 Over all 84 flight cells:
