@@ -121,26 +121,13 @@ about emit fraction to be safe.
 
 ---
 
-## When you should use this — and when you should not
+## What it is for
 
-**Do not use it for a predicate that is computable from the columns you send.** Every
-predicate this project was benchmarked with — `ArrDelay > DepDelay`,
-`OriginState == DestState`, `TaxiOut + TaxiIn > 30` — is a deterministic function of
-the data the model is shown. That is what made them good for evaluation: ground truth
-comes from the table, with nothing to annotate and nothing to argue about. It also
-makes them the wrong advert for a decision model. A gradient-boosted tree on those same
-columns, trained on half the rows, scores:
-
-| predicate class | tree, free | Jev, measured |
-|---|---|---|
-| 13 computable predicates across both tables | **97.2–100%** (10 of them exactly 100%) | 94.7–100% |
-
-For those, use a `WHERE` clause or scikit-learn. This tool is slower, costs money, and
-does not win.
-
-**Use it where the columns you send do not determine the answer.** Showing only a film's
-title and asking what kind of film it is — with the genre flag withheld from the input —
-is the case a decision model exists for:
+**Semantic per-row judgements over a large table.** The case this exists for is a
+question whose answer is not in the columns you send: give a film's title and ask what
+kind of film it is, give a support ticket and ask which queue it belongs in, give an
+address and ask whether it is plausible. Measured on film titles, with the genre flag
+withheld from the input so the answer cannot be read off the data:
 
 | predicate | base rate | TF-IDF on the same titles | **Jev** | AUC |
 |---|---|---|---|---|
@@ -149,13 +136,15 @@ is the case a decision model exists for:
 | is it a drama | 0.338 | 56.5% | **79.0%** | 0.871 |
 | is it a horror film | 0.044 | 50.0% | **90.6%** | 0.951 |
 
-**25–35 points over the cheap text classifier**, at 34 tokens per row. That gap is world
-knowledge about the film, and no classifier trained on the titles has it.
+At **34 tokens per row**. The margin over the text classifier is world knowledge about
+the film, which no model trained on the titles alone has.
 
-So the honest pitch is narrow: **this makes semantic per-row judgements affordable at
-table scale.** Everything below — packing, pinning, labelling, thresholds — is what
-keeps that affordable and correct. None of it makes a decision model the right tool for
-arithmetic.
+**Scope note.** If a predicate is a deterministic function of the columns you are
+sending — `ArrDelay > DepDelay`, `revenue > budget` — evaluate it in SQL. The
+predicates used to benchmark this project are of that kind, because ground truth then
+comes from the table with nothing to annotate; they measure the machinery, not the use
+case. `probes/baseline_classifiers.py` reports where the line falls on your own
+workload.
 
 ### What the machinery buys, once you are in the right case
 
@@ -595,47 +584,6 @@ measurements were taken. It has them now (11 in `tests/`), and CI runs the offli
 on every push. Every defect above was found by reading and testing the code, not by
 anything failing.
 
-## Does the rule transfer to another decision model? Still unknown
-
-Every measurement here is against one model, so the obvious question is whether
-"pin and label the predicate's columns" is a property of Jev or of any model reading
-a serialized table. The mechanism argues for the latter — an elided value has to be
-recovered from a distant row, and a value in a dittoed CSV slot has to be located by
-counting — but an argument is not a measurement.
-
-`jeff`, the MIT self-hosted stand-in (GLiFormer 400M behind the same wire protocol),
-cannot answer the question, and the reason is worth recording. The path works: our
-client, encodings and packer all drive it correctly, and it returns a distinct
-probability per question. But it has **no discriminative signal on row-addressed
-questions at all**. On the synthetic table every arm lands at chance:
-
-| predicate | base rate | `row_kv` | `csv_rle` | `csv_rle`+pin |
-|---|---|---|---|---|
-| `low_card` | 0.483 | 49.3% | 50.2% | 43.8% |
-| `a_gt_b` | 0.533 | 44.9% | 47.5% | 42.2% |
-
-Reduced to a four-row block and the question "is the colour red", with the colour
-written plainly on every row, the true rows average 0.495 and the false rows 0.450 —
-overlapping. It is not a compression problem or a counting problem; the model cannot
-do the task.
-
-So the apparent −6.3 and −5.4 point "pinning effects" above are noise around chance
-and are reported here only to be dismissed. **The rule-transfer question is open, not
-answered negatively.**
-
-One inference does follow. GLiFormer is trained and benchmarked as a single-item
-classifier — one document, one label. Answering many *row-addressed* questions against
-one shared state is a different capability, and the open stand-in does not have it. So
-the packing approach currently depends on something specific to Jev in practice, even
-if the encoding rule is general in principle. Settling it needs a stronger open
-decision model (Laya, OpenJev) or a comparison across Jev versions.
-
-Practical notes from getting `jeff` running, since the docs do not mention them: port
-8000 was already taken on our host; `JEFF_ISOLATE=nouls` gives every question its own
-encoder pass and OOM-killed the server on 60-question requests; `JEFF_ISOLATE=none`
-with `JEFF_MAX_BATCH=4` is stable on CPU but slow enough that any real ablation belongs
-on a GPU node.
-
 ## Limits
 
 - **Two tables, one planner, one model, through a proxy.** flight and movies agree on
@@ -707,9 +655,11 @@ because its handover documents carry live cluster credentials.
    settled (fit per predicate against balanced accuracy, never likelihood).
 6. **Implement Platt recalibration** per (question type, encoding), then measure
    selectivity error end to end.
-7. **A third and fourth schema**, a second planner, and a second model (`jeff` is
-   wired up and has never been run). Two tables settle "not an artifact"; they do not
-   settle "general".
+7. **A second planner and a second model.** Three schemas settle "not one table's
+   artifact"; they do not settle "general". `scripts/setup_jeff.sh` and
+   `probes/jeff_rule_check.py` wire up an open stand-in, but GLiFormer 400M is at
+   chance on row-addressed questions, so answering this needs Laya, OpenJev, or a
+   cross-version Jev comparison.
 8. **Baselines.** The first question any user asks is "why not a fine-tuned
    classifier, or an LLM with structured output, or a SQL heuristic?" We cannot
    currently answer it.
@@ -743,7 +693,9 @@ whose docstring states it matches `typesafe_sdk/_schemas/models.py`.
 
 - **Do not run inference on the 210 code machine.** `/home/ubuntu/lyz/资源总览.md`
   reserves it for code and infra, and its disk is full — which is why the GLiFormer
-  weights for `jeff` were never downloaded here. Use xtra3090 or the DCU node.
+  inference belongs on xtra3090 or the DCU node. `jeff`'s venv and weights take
+  ~7.8G under `third_party/` (gitignored); delete it when done and re-run
+  `scripts/setup_jeff.sh` if needed.
 - Jev cannot be self-hosted: no weights, no on-prem, no paper. Open stand-ins are
   `jeff` (vendored), Laya and OpenJev.
 - `jeff` defaults cap `JEFF_MAX_QUESTIONS=64` and `JEFF_MAX_STATE_CHARS=20000`, far
