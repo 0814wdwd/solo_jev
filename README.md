@@ -349,6 +349,55 @@ scores **100% on all three predicates** — better than any blocked encoding. Th
 earlier frontier compared encodings at a fixed 120-row block on *both* sides, so it
 understated the gap to what one-row-per-request actually achieves.
 
+### Where the remaining gap actually is
+
+A blocked `row_kv` scores 96.2% on `delay_gt` where one row per request scores 100%, so
+most of the gap is not the compression and not the ditto convention. Two things were
+tested to close it.
+
+**Pushing the projection down is a cost win, not an accuracy win.** A predicate over two
+columns was being handed a 20-column projection, inherited from SOLO's setup where wide
+rows are the point. `Predicate.cols` already declares what the question reads, so the
+scan can send only that. Measured on flight at a 120-row block:
+
+| projection | `csv_rle`+pin+label | `row_kv` | tokens/row (compressed) |
+|---|---|---|---|
+| 2 cols (minimal) | **94.8%** | 94.1% | **49.7** |
+| 6 cols | 91.8% | 94.8% | 50.9 |
+| 12 cols | 91.5% | 93.7% | 58.0 |
+| 22 cols | 94.1% | **97.0%** | 84.7 |
+
+**1.7× cheaper and roughly accuracy-neutral** — and note `row_kv` got *worse* on a narrow
+projection, so extra context was helping it. Not the gap-closer it looked like.
+
+**The gap is row binding, and it is bought back with block size.** At a minimal
+projection, sweeping the block:
+
+| block | requests (1,200 rows) | bal@0.5 | bal@fitted | tokens/row |
+|---|---|---|---|---|
+| **1** | 1,200 | **100.0%** | **100.0%** | **338.0** |
+| 10 | 120 | 95.3% | 94.0% | 74.6 |
+| **30** | 40 | **97.0%** | **96.5%** | 56.2 |
+| 60 | 20 | 93.7% | 95.6% | 51.6 |
+| 120 | 10 | 93.1% | 94.3% | 49.7 |
+
+A single row per request reaches 100% **under the compressed encoding too**, so the
+ceiling belongs to asking about one row at a time, not to `row_kv` and not to a wide
+projection. Its 338 tokens per row are almost entirely the 260-token per-request
+overhead: batching's saving *is* amortizing that overhead.
+
+Narrow projection plus a 30-row block gives **96.5% at 56.2 tokens/row against the
+baseline's 100% at 338** — 6× cheaper for 3.5 points, where the earlier configuration
+gave 5.3. The default block is now 60, a compromise that is not badly wrong on either
+a narrow or a wide projection; `probes/sweep_block_size.py` produces the curve for a
+specific predicate, which is the only honest way to choose.
+
+**The remaining 3.5 points does not go away.** Asking about many rows in one request
+costs something on a hard predicate, and no encoding, projection or threshold recovers
+it. It is also predicate-specific: `weekend` and `state_eq` are at 100% with 120-row
+blocks. So the tool's job is to measure the curve per predicate and let the caller
+choose a point on it, not to pretend the trade does not exist.
+
 ### Two defects the end-to-end run exposed
 
 The first version of this run scored `delay_gt` at 66.2% / 90.8%, against a baseline

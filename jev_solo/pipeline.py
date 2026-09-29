@@ -132,7 +132,7 @@ class Scanner:
         planner: str = "solo_greedy",
         pin: bool = True,
         q_tokens: int = 24,
-        max_block_rows: Optional[int] = 120,
+        max_block_rows: Optional[int] = 60,
     ):
         self.table = table
         self.client = client
@@ -140,11 +140,23 @@ class Scanner:
         self.planner = planner
         self.pin = pin
         self.q_tokens = q_tokens
-        # 120, not "fill the token budget", and the difference is measured. Past
-        # ~120 rows per request the bill barely moves (92,327 -> 90,560 tokens from
-        # 120 to 600 rows, 2%) while balanced accuracy falls 3.3 points on a signed
-        # numeric comparison. Filling the budget buys throughput, not money, so it
-        # has to be asked for rather than assumed. Set None to fill the budget.
+        # 60, not "fill the token budget", and every part of that is measured.
+        #
+        # Filling the budget is close to pointless: tokens fall 2% from a 120-row to
+        # a 600-row block (92,327 -> 90,560) while balanced accuracy drops 3.3 points.
+        # It buys throughput, not money.
+        #
+        # 60 rather than 120 because the cost curve is nearly flat below ~120 and the
+        # accuracy curve is not. On a narrow projection, blocks of 30/60/120 score
+        # 96.5% / 95.6% / 94.3% at 56.2 / 51.6 / 49.7 tokens per row: two points of
+        # accuracy for 13% of the bill. On a wide projection the ordering is flatter,
+        # so 60 is the compromise that is not badly wrong in either regime.
+        #
+        # The right value is predicate- and width-dependent, and the only honest way
+        # to set it is to measure: probes/sweep_block_size.py produces the curve.
+        # A single row per request scores 100% on every predicate tested and costs
+        # 338 tokens per row, almost all of it the 260-token per-request overhead --
+        # that is the accuracy ceiling and the price of reaching it.
         self.max_block_rows = max_block_rows
 
     # ---- shared setup ----------------------------------------------------
