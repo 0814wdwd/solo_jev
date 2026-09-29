@@ -3,11 +3,11 @@
   "requests": 1657,
   "billed_tokens": 3929704,
   "usd": 0.165047568,
-  "wall_s": 542.9566733837128,
+  "wall_s": 556.7665333747864,
   "throttled_s": 0.0,
-  "rows_per_s": 183.07169774806886,
+  "rows_per_s": 178.53084559069407,
   "failures": 0,
   "threshold": 0.97,
   "bal_half": 1.0,
-  "bal_fit": 0.998098930182279
+  "bal_fit": 0.9980802922428896
 }

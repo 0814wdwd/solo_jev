@@ -1,0 +1,16 @@
+downloading uv 0.12.20 x86_64-unknown-linux-gnu
+installing to /home/ubuntu/.local/bin
+  uv
+  uvx
+everything's installed!
+=== uv sync ===
+ + uvicorn==0.53.0
+ + uvloop==0.22.1
+ + watchfiles==1.2.0
+ + websockets==17.1
+ + yarl==1.25.1
+=== 下载 GLiFormer ===
+Still waiting to acquire lock on /home/ubuntu/wd/solo_jev/third_party/jeff/models/gliformer-large-v1/.cache/huggingface/.gitignore.lock (elapsed: 0.1 seconds)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+path=/home/ubuntu/wd/solo_jev/third_party/jeff/models/gliformer-large-v1
+=== 完成 ===

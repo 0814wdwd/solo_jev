@@ -1,0 +1,5 @@
+# second model at http://localhost:8124; absolute numbers are not comparable to Jev, the direction of the pinning effect is
+
+## low_card  n=60  base=0.483
+   arm             bal@0.5  answered
+   row_kv            49.3%    60/60  
