@@ -1,4 +1,47 @@
 {
-  "base_url": "http://localhost:8123",
-  "records": []
+  "base_url": "http://localhost:8124",
+  "records": [
+    {
+      "predicate": "low_card",
+      "arm": "row_kv",
+      "bal_half": 0.49332591768631817,
+      "n": 60,
+      "base_rate": 0.48333333333333334
+    },
+    {
+      "predicate": "low_card",
+      "arm": "csv_rle",
+      "bal_half": 0.5016685205784205,
+      "n": 60,
+      "base_rate": 0.48333333333333334
+    },
+    {
+      "predicate": "low_card",
+      "arm": "csv_rle+pin",
+      "bal_half": 0.4382647385984427,
+      "n": 60,
+      "base_rate": 0.48333333333333334
+    },
+    {
+      "predicate": "a_gt_b",
+      "arm": "row_kv",
+      "bal_half": 0.4486607142857143,
+      "n": 60,
+      "base_rate": 0.5333333333333333
+    },
+    {
+      "predicate": "a_gt_b",
+      "arm": "csv_rle",
+      "bal_half": 0.47544642857142855,
+      "n": 60,
+      "base_rate": 0.5333333333333333
+    },
+    {
+      "predicate": "a_gt_b",
+      "arm": "csv_rle+pin",
+      "bal_half": 0.421875,
+      "n": 60,
+      "base_rate": 0.5333333333333333
+    }
+  ]
 }

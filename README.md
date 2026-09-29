@@ -595,6 +595,47 @@ measurements were taken. It has them now (11 in `tests/`), and CI runs the offli
 on every push. Every defect above was found by reading and testing the code, not by
 anything failing.
 
+## Does the rule transfer to another decision model? Still unknown
+
+Every measurement here is against one model, so the obvious question is whether
+"pin and label the predicate's columns" is a property of Jev or of any model reading
+a serialized table. The mechanism argues for the latter — an elided value has to be
+recovered from a distant row, and a value in a dittoed CSV slot has to be located by
+counting — but an argument is not a measurement.
+
+`jeff`, the MIT self-hosted stand-in (GLiFormer 400M behind the same wire protocol),
+cannot answer the question, and the reason is worth recording. The path works: our
+client, encodings and packer all drive it correctly, and it returns a distinct
+probability per question. But it has **no discriminative signal on row-addressed
+questions at all**. On the synthetic table every arm lands at chance:
+
+| predicate | base rate | `row_kv` | `csv_rle` | `csv_rle`+pin |
+|---|---|---|---|---|
+| `low_card` | 0.483 | 49.3% | 50.2% | 43.8% |
+| `a_gt_b` | 0.533 | 44.9% | 47.5% | 42.2% |
+
+Reduced to a four-row block and the question "is the colour red", with the colour
+written plainly on every row, the true rows average 0.495 and the false rows 0.450 —
+overlapping. It is not a compression problem or a counting problem; the model cannot
+do the task.
+
+So the apparent −6.3 and −5.4 point "pinning effects" above are noise around chance
+and are reported here only to be dismissed. **The rule-transfer question is open, not
+answered negatively.**
+
+One inference does follow. GLiFormer is trained and benchmarked as a single-item
+classifier — one document, one label. Answering many *row-addressed* questions against
+one shared state is a different capability, and the open stand-in does not have it. So
+the packing approach currently depends on something specific to Jev in practice, even
+if the encoding rule is general in principle. Settling it needs a stronger open
+decision model (Laya, OpenJev) or a comparison across Jev versions.
+
+Practical notes from getting `jeff` running, since the docs do not mention them: port
+8000 was already taken on our host; `JEFF_ISOLATE=nouls` gives every question its own
+encoder pass and OOM-killed the server on 60-question requests; `JEFF_ISOLATE=none`
+with `JEFF_MAX_BATCH=4` is stable on CPU but slow enough that any real ablation belongs
+on a GPU node.
+
 ## Limits
 
 - **Two tables, one planner, one model, through a proxy.** flight and movies agree on
