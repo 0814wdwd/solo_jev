@@ -35,8 +35,8 @@ bench = ["requests>=2.28", "pandas>=2.0"]
 dev = ["pytest>=7.0", "requests>=2.28", "pandas>=2.0"]
 
 [project.urls]
-Homepage = "https://github.com/OWNER/jev-solo"
-Issues = "https://github.com/OWNER/jev-solo/issues"
+Homepage = "https://github.com/0814wdwd/solo_jev"
+Issues = "https://github.com/0814wdwd/solo_jev/issues"
 
 [tool.setuptools]
 packages = ["jev_solo"]
