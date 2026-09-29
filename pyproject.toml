@@ -9,7 +9,7 @@ description = "Per-row judgements over large relational tables on a decision mod
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
-authors = [{ name = "Yingze Li" }]
+authors = [{ name = "Yingze Li" }, { name = "Dong Wang" }]
 keywords = ["llm", "database", "analytics", "decision-model", "jev", "typesafe"]
 classifiers = [
     "Development Status :: 3 - Alpha",

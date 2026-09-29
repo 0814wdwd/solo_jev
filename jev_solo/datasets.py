@@ -58,11 +58,28 @@ def _s(v: str) -> str:
 @dataclass
 class Predicate:
     name: str
-    cols: List[str]
+    cols: List[str]          # columns the model is shown, and pinned
     shape: str
-    ask_verbose: str  # must contain {rid}
+    ask_verbose: str         # must contain {rid}
     ask_terse: str
     truth: Callable[[Sequence[str]], bool]
+    truth_cols: Optional[List[str]] = None
+    semantic: bool = False
+
+    @property
+    def label_cols(self) -> List[str]:
+        """Columns ground truth is computed from — withheld from the model when
+        they differ from `cols`.
+
+        Every predicate that ships with a table below except the semantic ones is a
+        deterministic function of the columns the model is shown. That made them
+        ideal for evaluation and useless as a value case: a gradient-boosted tree on
+        those same columns scores 97-100% on all of them, for free. A decision model
+        earns its place only where the shown columns do NOT determine the answer, so
+        `truth_cols` lets a predicate read its label from a column the model never
+        sees.
+        """
+        return self.truth_cols or self.cols
 
 
 @dataclass
@@ -98,9 +115,20 @@ class TableSpec:
         return sorted(set(base + need))
 
 
-def _p(name, cols, shape, verbose, terse, truth) -> Predicate:
+def _p(name, cols, shape, verbose, terse, truth, truth_cols=None,
+       semantic=False) -> Predicate:
     return Predicate(name=name, cols=cols, shape=shape, ask_verbose=verbose,
-                     ask_terse=terse, truth=truth)
+                     ask_terse=terse, truth=truth, truth_cols=truth_cols,
+                     semantic=semantic)
+
+
+def _genre(flag: str, phrase: str) -> Predicate:
+    """Show the title; ask about the film; grade against a withheld genre flag."""
+    return _p(f"is_{flag.lower()}", ["title"], "semantic: title -> genre",
+              "For row r{rid}: " + phrase,
+              "r{rid}: " + phrase,
+              lambda v: str(v[0]).strip() in ("1", "1.0", "True"),
+              truth_cols=[flag], semantic=True)
 
 
 FLIGHT = TableSpec(
@@ -176,7 +204,7 @@ MOVIES = TableSpec(
                       "For row r{rid}: the original language is English.",
                       "r{rid}: original_language is en.",
                       lambda v: _s(v[0]) == "en"),
-        "is_action": _p("is_action", ["Action"], "binary flag, 1 very low-NDV col",
+        "action_flag": _p("action_flag", ["Action"], "binary flag, 1 very low-NDV col",
                         "For row r{rid}: the Action flag is set to 1.",
                         "r{rid}: Action is 1.",
                         lambda v: _s(v[0]) in ("1", "1.0", "True")),
@@ -184,6 +212,11 @@ MOVIES = TableSpec(
                         "For row r{rid}: the runtime is greater than 120 minutes.",
                         "r{rid}: runtime > 120.",
                         lambda v: _num(v[0]) > 120),
+        # Semantic: the model is shown only the title and must know the film.
+        "is_action": _genre("Action", "this film is an action film."),
+        "is_comedy": _genre("Comedy", "this film is a comedy."),
+        "is_drama": _genre("Drama", "this film is a drama."),
+        "is_horror": _genre("Horror", "this film is a horror film."),
         "hit": _p("hit", ["vote_average", "vote_count"], "conjunction, 2 cols",
                   "For row r{rid}: the average vote is above 7 and the vote count is "
                   "above 1000.",

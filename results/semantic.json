@@ -1,0 +1,48 @@
+{
+  "records": [
+    {
+      "predicate": "is_action",
+      "n": 1200,
+      "base_rate": 0.4425,
+      "jev_half": 0.838704365230169,
+      "jev_fit": 0.8320787983589326,
+      "auc": 0.9136066185196487,
+      "tfidf": null,
+      "tokens_per_row": 34.736666666666665,
+      "threshold": 0.57
+    },
+    {
+      "predicate": "is_comedy",
+      "n": 1200,
+      "base_rate": 0.335,
+      "jev_half": 0.8848146485617028,
+      "jev_fit": 0.9091355091923157,
+      "auc": 0.9649994835777732,
+      "tfidf": null,
+      "tokens_per_row": 33.736666666666665,
+      "threshold": 0.28
+    },
+    {
+      "predicate": "is_drama",
+      "n": 1200,
+      "base_rate": 0.3375,
+      "jev_half": 0.753319357092942,
+      "jev_fit": 0.7903340440653874,
+      "auc": 0.8709709597376526,
+      "tfidf": null,
+      "tokens_per_row": 33.736666666666665,
+      "threshold": 0.31
+    },
+    {
+      "predicate": "is_horror",
+      "n": 1200,
+      "base_rate": 0.04416666666666667,
+      "jev_half": 0.8385945287953809,
+      "jev_fit": 0.905789332618601,
+      "auc": 0.9509514875368534,
+      "tfidf": null,
+      "tokens_per_row": 34.736666666666665,
+      "threshold": 0.17
+    }
+  ]
+}

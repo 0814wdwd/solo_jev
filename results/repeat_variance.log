@@ -1,0 +1,14 @@
+predicate     run  bal@0.5  bal@fit  thresh
+delay_gt        0    93.6%    93.8%    0.71
+delay_gt        1    93.8%    94.9%    0.68
+delay_gt        2    94.6%    96.0%    0.73
+delay_gt        3    94.0%    95.2%    0.69
+delay_gt        4    93.9%    94.6%    0.71
+delay_gt       sd    0.33    0.74   range@0.5=1.0pt range@fit=2.3pt
+weekend         0   100.0%    99.7%    0.97
+weekend         1   100.0%   100.0%    0.97
+weekend         2   100.0%   100.0%    0.96
+weekend         3   100.0%   100.0%    0.97
+weekend         4   100.0%   100.0%    0.96
+weekend        sd    0.00    0.13   range@0.5=0.0pt range@fit=0.3pt
+# 200 calls, $0.022975 billed this run

@@ -1,0 +1,8 @@
+predicate        n   base  jev@0.5  jev@fit   tfidf    AUC  tok/row
+is_action     1200  0.443    83.9%    83.2%    nan%  0.914     34.7
+is_comedy     1200  0.335    88.5%    90.9%    nan%  0.965     33.7
+is_drama      1200  0.338    75.3%    79.0%    nan%  0.871     33.7
+is_horror     1200  0.044    83.9%    90.6%    nan%  0.951     34.7
+
+# 80 calls, $0.006902 billed this run
+# wrote results/semantic.json

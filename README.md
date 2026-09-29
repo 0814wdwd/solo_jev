@@ -121,82 +121,128 @@ about emit fraction to be safe.
 
 ---
 
-## Why you would use it
+## When you should use this — and when you should not
 
-**Throughput, not cost — this is the real pitch.** The money is irrelevant: scanning
-100k rows costs about $5.17 naively and $0.97 optimised, and nobody starts a project to
-save $4. But the provider caps you at **1,200 requests/minute**. One request per row
-means a 100k-row table spends **83 minutes** just clearing the request quota. Packed,
-it is **under 2 minutes** — roughly **50x more throughput against a hard external limit
-you cannot buy your way past**. (Projected from 5,000-row measurements; not yet run at
-100k.)
+**Do not use it for a predicate that is computable from the columns you send.** Every
+predicate this project was benchmarked with — `ArrDelay > DepDelay`,
+`OriginState == DestState`, `TaxiOut + TaxiIn > 30` — is a deterministic function of
+the data the model is shown. That is what made them good for evaluation: ground truth
+comes from the table, with nothing to annotate and nothing to argue about. It also
+makes them the wrong advert for a decision model. A gradient-boosted tree on those same
+columns, trained on half the rows, scores:
 
-**It makes aggressive compression safe.** Without the pinning rule, compression wrecks
-accuracy *silently* — and silence is the danger, because nothing errors out. You get
-back a set of perfectly plausible probabilities that happen to be wrong. This gives a
-rule that prevents it and a diagnostic that predicts it before you spend anything.
+| predicate class | tree, free | Jev, measured |
+|---|---|---|
+| 13 computable predicates across both tables | **97.2–100%** (10 of them exactly 100%) | 94.7–100% |
 
-**It behaves predictably on tables you have never measured.** Pinning cuts
-cross-schema accuracy spread from 6.5–8.8 points down to 2.0–3.7. For a default
-shipped to other people that is worth more than the average gain.
+For those, use a `WHERE` clause or scikit-learn. This tool is slower, costs money, and
+does not win.
 
-**Free accuracy from reading the output correctly.** +2.7 points overall and +5.7 on
-selective predicates, with zero extra API calls. It also documents the trap: tune the
-cutoff for raw *accuracy* and it collapses to "always no" on 45% of runs for selective
-predicates — excellent on an accuracy metric, useless in practice.
+**Use it where the columns you send do not determine the answer.** Showing only a film's
+title and asking what kind of film it is — with the genre flag withheld from the input —
+is the case a decision model exists for:
 
-**The probabilities are usable** after an affine recalibration (ECE 0.10 → 0.025, AUC
-0.954), which keeps selectivity estimation on the table. This part is preliminary.
+| predicate | base rate | TF-IDF on the same titles | **Jev** | AUC |
+|---|---|---|---|---|
+| is it an action film | 0.443 | 52.9% | **83.2%** | 0.914 |
+| is it a comedy | 0.335 | 58.6% | **90.9%** | 0.965 |
+| is it a drama | 0.338 | 56.5% | **79.0%** | 0.871 |
+| is it a horror film | 0.044 | 50.0% | **90.6%** | 0.951 |
 
-### Results worth knowing even if you never use this
+**25–35 points over the cheap text classifier**, at 34 tokens per row. That gap is world
+knowledge about the film, and no classifier trained on the titles has it.
 
-Three things we tried that did **not** work, so nobody has to repeat them:
+So the honest pitch is narrow: **this makes semantic per-row judgements affordable at
+table scale.** Everything below — packing, pinning, labelling, thresholds — is what
+keeps that affordable and correct. None of it makes a decision model the right tool for
+arithmetic.
 
-- **Splitting one question into several does not help.** A published result gets 62.6%
-  → 95% on phishing that way. On relational predicates it does not reproduce: the
-  ensemble is no better than asking once, and costs 27% more. Its apparent gain was its
-  combiner quietly fixing calibration — which a fitted threshold does better and free.
-- **Having the model read values into bands and computing in code is worse**: −6 points
-  and +66% tokens. Ordinal bands are lossy exactly where a comparison is decided.
-- **The cheapest-looking encoding is unusable.** Transposing into column-major with run
-  lengths wins on tokens and scores near chance (64.1% balanced accuracy). Cheap tokens
-  are worthless if the answers are noise.
+### What the machinery buys, once you are in the right case
 
----
+**Throughput, not money.** Scanning 100k rows costs about $2.05 naively and $0.32
+packed, and nobody starts a project to save $2. But the provider caps requests at
+**1,200/minute**: one request per row means a 100k-row table spends **83 minutes**
+clearing the request quota alone. Packed, that is a couple of minutes.
+
+**Aggressive compression made safe.** Without pinning, compression wrecks accuracy
+*silently* — nothing errors, you simply get plausible wrong probabilities. Pinning has
+never cost more than a point in 52 paired cells across two schemas, and it also makes
+accuracy schema-stable: unpinned encodings swing 6.5–8.8 points between tables, pinned
+ones 2.0–3.7.
+
+**Free accuracy from reading the output correctly.** +2.7 points overall, +5.7 on
+selective predicates, zero extra API calls — provided the cutoff is fitted against
+*balanced* accuracy. Fitted for raw accuracy it collapses to "always no" on 45% of runs.
+
+**Probabilities you can consume.** After an affine recalibration, ECE 0.100 → 0.025
+with AUC 0.954, which is what makes a selectivity estimate possible.
+
+### How much noise is in all of these numbers
+
+**Jev is not deterministic.** The identical request, repeated, moves an individual
+probability by up to **0.48**; reordering the questions moves it 0.15; renumbering the
+row ids 0.56. That propagates into far less movement at the metric level, but not none:
+repeating a full 1,200-row measurement five times gives
+
+| predicate | bal@0.5 sd | bal@fitted sd | fitted range over 5 runs |
+|---|---|---|---|
+| `delay_gt` | 0.33 pt | 0.74 pt | **2.3 pt** |
+| `weekend` | 0.00 pt | 0.13 pt | 0.3 pt |
+
+**So differences below about 1.5 points on a fitted number are not meaningful**, and
+several comparisons in this README sit near that line — including the 1.8-point gain
+from narrowing the projection and shrinking the block. Comparisons that clearly survive
+the noise: pinning (+5 to +37), labelling pinned cells (+9.9 on `taxi_sum`), the
+threshold objective (50.0 vs 81.0 on selective predicates), and Jev over TF-IDF on the
+semantic predicates (+25 to +35).
 
 ## Quickstart
 
-Offline — no API key, no network. Costs a table's worth of input tokens under the
-measured billing model and tells you what a scan would cost:
-
 ```bash
-python3 -m jev_solo.bench_offline \
-  --csv /path/to/table.csv --rows 5000 \
-  --encodings row_kv,csv_block,csv_rle,columnar_rle,factored_rle \
-  --out results/mytable.json
-
-python3 -m jev_solo.rescore --bench results/mytable.json \
-                            --tokenize results/or_tokenize.json
+pip install -e ".[dev]"     # offline parts need only numpy + tiktoken
+python -m pytest tests/ -q  # 28 tests, no key and no network
 ```
 
-Against the real API — put a key in `.env.local` (see `.env.local.example`):
+The library, with the measured defaults already applied — pinned and labelled columns,
+a 60-row block, the predicate's own columns projected down:
 
-```bash
-# reachable through OpenRouter as typesafe/jev-1.13
-python3 probes/probe_accuracy_scaled.py --table movies --random-sample
-python3 -m jev_solo.cross_table          # is the rule schema-specific?
-python3 -m jev_solo.threshold            # offline; fitted decision thresholds
-python3 -m jev_solo.calibration          # ECE, noise floor, Platt refit
+```python
+from jev_solo import Scan, datasets
+
+table = datasets.get("movies")
+scan  = Scan(table, ["is_comedy"])
+
+scan.calibrate(rows[:600], header=header)   # labelled sample -> threshold (+ Platt)
+result = scan.run(rows, header=header)
+
+print(result.report())
+verdicts = result.verdicts["is_comedy"]         # bool per row
+p        = result.calibrated["is_comedy"]       # recalibrated probabilities
 ```
 
-Probes can also run with **no key at all** against `probes/mock_server.py`, a stdlib
-mock of the wire protocol, or against a self-hosted stand-in (`scripts/setup_jeff.sh`).
+`report()` states the measured cost and throughput **for your table**, not a headline:
+the saving is schema-dependent (41% of `row_kv` tokens on flight, 65% on movies), so a
+promised number would be wrong for somebody. It also warns when a predicate's columns
+are being elided and pinning is off, since that failure is silent.
 
-**Bring your own table** by adding a `TableSpec` to `jev_solo/datasets.py`: the file,
-the projection, and predicates whose ground truth is computed from the table itself.
-That is the interface — the probes take `--table` and never hardcode a schema.
+**Bring your own table** by adding a `TableSpec` to `jev_solo/datasets.py`: the file, a
+projection, and predicates carrying a `truth` callable. Set `truth_cols` when ground
+truth lives in a column the model must not see — that is how the semantic predicates
+above are graded.
 
----
+Offline analysis, no key required:
+
+```bash
+python3 -m jev_solo.bench_offline --csv table.csv --rows 5000   # what would this cost?
+python3 -m jev_solo.threshold      # fitted cutoffs, averaged over splits
+python3 -m jev_solo.calibration    # ECE against a noise floor, Platt refit
+python3 -m jev_solo.cross_table    # is the rule schema-specific?
+python3 probes/baseline_classifiers.py   # would a tree do this for free?
+```
+
+Against a real endpoint, put a key in `.env.local` (see `.env.local.example`); Jev is
+reachable through OpenRouter as `typesafe/jev-1.13`. Probes also run with **no key at
+all** against `probes/mock_server.py`, a stdlib mock of the wire protocol.
 
 ## What we measured
 
