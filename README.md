@@ -418,6 +418,34 @@ scores **100% on all three predicates** — better than any blocked encoding. Th
 earlier frontier compared encodings at a fixed 120-row block on *both* sides, so it
 understated the gap to what one-row-per-request actually achieves.
 
+### Measured at 100k rows, through the public API
+
+The throughput headline was arithmetic on 5,000-row measurements. Run for real:
+
+```
+99,400 rows x 1 predicate on flight
+  1,657 requests, 3,929,704 billed tokens ($0.1650), 39.5 tokens/row
+  543.0s wall (0.0s waiting on the rate limiter), 183 rows/s, zero failures
+  balanced accuracy 100.0% at 0.5, 99.8% at the calibrated threshold 0.97
+```
+
+**Nine minutes.** The per-row baseline runs at a measured 3.1 rows/s, so the same scan
+one row at a time is **8.6 hours**, and its 99,400 requests alone consume 83 minutes of
+the documented 1,200/min quota. That is **~59x**, against the **~90-100x** the 5k
+numbers projected.
+
+The projection overstated it by about 1.7x, and the reason is ours, not the model's:
+the 5k runs used the old 120-row block default and packed 119 rows per request, while
+this one uses the current 60-row default. Halving the block doubles the requests and
+roughly halves rows/s. That is exactly the accuracy/throughput trade documented above,
+showing up in a headline number — which is the argument for measuring rather than
+scaling.
+
+One more thing worth recording: **the calibrated threshold was slightly worse than 0.5
+here** (99.8% against 100.0%). When a predicate is already at ceiling, a cutoff fitted
+on 600 rows can only add noise. Calibration earns its keep on hard predicates; on easy
+ones it is a wash or a small loss.
+
 ### Where the remaining gap actually is
 
 A blocked `row_kv` scores 96.2% on `delay_gt` where one row per request scores 100%, so
