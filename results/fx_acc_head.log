@@ -1,0 +1,61 @@
+# table=flight  40000 rows x 110 cols
+
+## delay_gt  (numeric compare, 2 cols)  cols=['ArrDelay', 'DepDelay']
+   base_rate=0.325   predicate cols at positions [22, 19]/22, emitted ['100%', '100%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv               90.0%    92.6%    85733   360
+   csv_block            82.5%    86.8%    46324   360
+   csv_rle              81.1%    86.0%    34028   360
+   csv_rle+pin          80.0%    85.2%    34028   360
+
+## state_eq  (categorical equality, 2 cols)  cols=['OriginState', 'DestState']
+   base_rate=0.128   predicate cols at positions [13, 10]/21, emitted ['94%', '86%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv               85.0%    69.1%    80702   360
+   csv_block            85.6%    54.6%    43087   360
+   csv_rle              81.1%    49.3%    31442   360
+   csv_rle+pin          83.1%    51.3%    31544   360
+
+## dist_gt  (numeric threshold, 1 col)  cols=['Distance']
+   base_rate=0.000   predicate cols at positions [21]/21, emitted ['100%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv              100.0%    50.0%    82142   360
+   csv_block           100.0%    50.0%    44887   360
+   csv_rle             100.0%    50.0%    32537   360
+   csv_rle+pin         100.0%    50.0%    32537   360
+
+## weekend  (set membership, 1 low-NDV col)  cols=['DayOfWeek']
+   base_rate=0.247   predicate cols at positions [7]/20, emitted ['6%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv               99.7%    99.8%    78902   360
+   csv_block            98.6%    99.1%    42358   360
+   csv_rle              81.4%    71.8%    30008   360
+   csv_rle+pin          99.2%    99.4%    30460   360
+
+## carrier_in  (set membership, 1 low-NDV col)  cols=['Reporting_Airline']
+   base_rate=0.000   predicate cols at positions [4]/20, emitted ['1%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv              100.0%    50.0%    78542   360
+   csv_block           100.0%    50.0%    41998   360
+   csv_rle             100.0%    50.0%    29648   360
+   csv_rle+pin         100.0%    50.0%    30362   360
+
+## taxi_sum  (arithmetic over 2 cols)  cols=['TaxiOut', 'TaxiIn']
+   base_rate=0.386   predicate cols at positions [20, 19]/22, emitted ['100%', '100%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv              100.0%   100.0%    86878   360
+   csv_block            99.7%    99.8%    48184   360
+   csv_rle              99.7%    99.8%    35881   360
+   csv_rle+pin          99.7%    99.8%    35886   360
+
+## conj  (conjunction, 2 cols)  cols=['DepDelay', 'ArrDelay']
+   base_rate=0.231   predicate cols at positions [19, 22]/22, emitted ['100%', '100%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv              100.0%   100.0%    88613   360
+   csv_block           100.0%   100.0%    49204   360
+   csv_rle              98.6%    97.0%    36908   360
+   csv_rle+pin          98.9%    97.6%    36908   360
+
+# 84 calls, $0.057109 billed this run
+
+# wrote results/fx_acc_head.json

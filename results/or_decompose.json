@@ -1,0 +1,284 @@
+{
+  "args": {
+    "rows_per_block": 120,
+    "blocks": 3,
+    "cols": 20,
+    "planner": "solo_greedy",
+    "predicates": "delay_gt,state_eq",
+    "encodings": "row_kv,csv_block,csv_rle+pin",
+    "seed": 0,
+    "out": "results/or_decompose.json"
+  },
+  "records": [
+    {
+      "predicate": "delay_gt",
+      "encoding": "row_kv",
+      "strategy": "A",
+      "balanced_accuracy": 0.8983739837398375,
+      "accuracy": 0.8611111111111112,
+      "billed_tokens": 85231,
+      "n_test": 180,
+      "base_rate": 0.33055555555555555,
+      "emit_fraction": [
+        1.0,
+        0.9916666666666667
+      ],
+      "n_features": 1
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "row_kv",
+      "strategy": "B",
+      "balanced_accuracy": 0.9473684210526316,
+      "accuracy": 0.9666666666666667,
+      "billed_tokens": 108019,
+      "n_test": 180,
+      "base_rate": 0.33055555555555555,
+      "emit_fraction": [
+        1.0,
+        0.9916666666666667
+      ],
+      "n_features": 4
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "row_kv",
+      "strategy": "C",
+      "balanced_accuracy": 0.8615746683782627,
+      "accuracy": 0.8944444444444445,
+      "billed_tokens": 141427,
+      "n_test": 180,
+      "base_rate": 0.33055555555555555,
+      "emit_fraction": [
+        1.0,
+        0.9916666666666667
+      ],
+      "n_features": 3
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_block",
+      "strategy": "A",
+      "balanced_accuracy": 0.8647540983606558,
+      "accuracy": 0.8166666666666667,
+      "billed_tokens": 45885,
+      "n_test": 180,
+      "base_rate": 0.33055555555555555,
+      "emit_fraction": [
+        1.0,
+        0.9916666666666667
+      ],
+      "n_features": 1
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_block",
+      "strategy": "B",
+      "balanced_accuracy": 0.897399660825325,
+      "accuracy": 0.9222222222222223,
+      "billed_tokens": 68673,
+      "n_test": 180,
+      "base_rate": 0.33055555555555555,
+      "emit_fraction": [
+        1.0,
+        0.9916666666666667
+      ],
+      "n_features": 4
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_block",
+      "strategy": "C",
+      "balanced_accuracy": 0.8473713962690785,
+      "accuracy": 0.8666666666666667,
+      "billed_tokens": 102081,
+      "n_test": 180,
+      "base_rate": 0.33055555555555555,
+      "emit_fraction": [
+        1.0,
+        0.9916666666666667
+      ],
+      "n_features": 3
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_rle+pin",
+      "strategy": "A",
+      "balanced_accuracy": 0.8801652892561984,
+      "accuracy": 0.8388888888888889,
+      "billed_tokens": 34933,
+      "n_test": 180,
+      "base_rate": 0.33055555555555555,
+      "emit_fraction": [
+        1.0,
+        0.9916666666666667
+      ],
+      "n_features": 1
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_rle+pin",
+      "strategy": "B",
+      "balanced_accuracy": 0.8780641546435075,
+      "accuracy": 0.8944444444444445,
+      "billed_tokens": 57721,
+      "n_test": 180,
+      "base_rate": 0.33055555555555555,
+      "emit_fraction": [
+        1.0,
+        0.9916666666666667
+      ],
+      "n_features": 4
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_rle+pin",
+      "strategy": "C",
+      "balanced_accuracy": 0.8183218938226642,
+      "accuracy": 0.8666666666666667,
+      "billed_tokens": 91129,
+      "n_test": 180,
+      "base_rate": 0.33055555555555555,
+      "emit_fraction": [
+        1.0,
+        0.9916666666666667
+      ],
+      "n_features": 3
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "row_kv",
+      "strategy": "A",
+      "balanced_accuracy": 1.0,
+      "accuracy": 1.0,
+      "billed_tokens": 80044,
+      "n_test": 180,
+      "base_rate": 0.08333333333333333,
+      "emit_fraction": [
+        0.9,
+        0.9833333333333333
+      ],
+      "n_features": 1
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "row_kv",
+      "strategy": "B",
+      "balanced_accuracy": 1.0,
+      "accuracy": 1.0,
+      "billed_tokens": 108952,
+      "n_test": 180,
+      "base_rate": 0.08333333333333333,
+      "emit_fraction": [
+        0.9,
+        0.9833333333333333
+      ],
+      "n_features": 4
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "row_kv",
+      "strategy": "C",
+      "balanced_accuracy": 1.0,
+      "accuracy": 1.0,
+      "billed_tokens": 99880,
+      "n_test": 180,
+      "base_rate": 0.08333333333333333,
+      "emit_fraction": [
+        0.9,
+        0.9833333333333333
+      ],
+      "n_features": 2
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_block",
+      "strategy": "A",
+      "balanced_accuracy": 1.0,
+      "accuracy": 1.0,
+      "billed_tokens": 42509,
+      "n_test": 180,
+      "base_rate": 0.08333333333333333,
+      "emit_fraction": [
+        0.9,
+        0.9833333333333333
+      ],
+      "n_features": 1
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_block",
+      "strategy": "B",
+      "balanced_accuracy": 1.0,
+      "accuracy": 1.0,
+      "billed_tokens": 71417,
+      "n_test": 180,
+      "base_rate": 0.08333333333333333,
+      "emit_fraction": [
+        0.9,
+        0.9833333333333333
+      ],
+      "n_features": 4
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_block",
+      "strategy": "C",
+      "balanced_accuracy": 1.0,
+      "accuracy": 1.0,
+      "billed_tokens": 62345,
+      "n_test": 180,
+      "base_rate": 0.08333333333333333,
+      "emit_fraction": [
+        0.9,
+        0.9833333333333333
+      ],
+      "n_features": 2
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_rle+pin",
+      "strategy": "A",
+      "balanced_accuracy": 0.9969512195121951,
+      "accuracy": 0.9944444444444445,
+      "billed_tokens": 31666,
+      "n_test": 180,
+      "base_rate": 0.08333333333333333,
+      "emit_fraction": [
+        0.9,
+        0.9833333333333333
+      ],
+      "n_features": 1
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_rle+pin",
+      "strategy": "B",
+      "balanced_accuracy": 0.96875,
+      "accuracy": 0.9944444444444445,
+      "billed_tokens": 60574,
+      "n_test": 180,
+      "base_rate": 0.08333333333333333,
+      "emit_fraction": [
+        0.9,
+        0.9833333333333333
+      ],
+      "n_features": 4
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_rle+pin",
+      "strategy": "C",
+      "balanced_accuracy": 1.0,
+      "accuracy": 1.0,
+      "billed_tokens": 51502,
+      "n_test": 180,
+      "base_rate": 0.08333333333333333,
+      "emit_fraction": [
+        0.9,
+        0.9833333333333333
+      ],
+      "n_features": 2
+    }
+  ]
+}

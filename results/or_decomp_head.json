@@ -1,0 +1,423 @@
+{
+  "args": {
+    "rows_per_block": 120,
+    "blocks": 3,
+    "cols": 20,
+    "planner": "solo_greedy",
+    "predicates": "delay_gt,state_eq",
+    "encodings": "row_kv,csv_block,csv_rle+pin",
+    "seed": 0,
+    "head": true,
+    "out": "results/or_decomp_head.json"
+  },
+  "records": [
+    {
+      "predicate": "delay_gt",
+      "encoding": "row_kv",
+      "strategy": "A",
+      "balanced_accuracy": 0.9421487603305785,
+      "accuracy": 0.9222222222222223,
+      "billed_tokens": 85733,
+      "n_test": 180,
+      "base_rate": 0.325,
+      "emit_fraction": [
+        1.0,
+        1.0
+      ],
+      "n_features": 1,
+      "fitted": false,
+      "sampling": "head"
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "row_kv",
+      "strategy": "A+fit",
+      "balanced_accuracy": 0.9708642667040202,
+      "accuracy": 0.9666666666666667,
+      "billed_tokens": 85733,
+      "n_test": 180,
+      "base_rate": 0.325,
+      "emit_fraction": [
+        1.0,
+        1.0
+      ],
+      "n_features": 1,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "row_kv",
+      "strategy": "B",
+      "balanced_accuracy": 0.8528505392912172,
+      "accuracy": 0.8722222222222222,
+      "billed_tokens": 108521,
+      "n_test": 180,
+      "base_rate": 0.325,
+      "emit_fraction": [
+        1.0,
+        1.0
+      ],
+      "n_features": 4,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "row_kv",
+      "strategy": "C",
+      "balanced_accuracy": 0.8139795489564365,
+      "accuracy": 0.8666666666666667,
+      "billed_tokens": 141929,
+      "n_test": 180,
+      "base_rate": 0.325,
+      "emit_fraction": [
+        1.0,
+        1.0
+      ],
+      "n_features": 3,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_block",
+      "strategy": "A",
+      "balanced_accuracy": 0.8697478991596639,
+      "accuracy": 0.8277777777777777,
+      "billed_tokens": 46314,
+      "n_test": 180,
+      "base_rate": 0.325,
+      "emit_fraction": [
+        1.0,
+        1.0
+      ],
+      "n_features": 1,
+      "fitted": false,
+      "sampling": "head"
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_block",
+      "strategy": "A+fit",
+      "balanced_accuracy": 0.9667998346879736,
+      "accuracy": 0.9666666666666667,
+      "billed_tokens": 46314,
+      "n_test": 180,
+      "base_rate": 0.325,
+      "emit_fraction": [
+        1.0,
+        1.0
+      ],
+      "n_features": 1,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_block",
+      "strategy": "B",
+      "balanced_accuracy": 0.8604490976718556,
+      "accuracy": 0.9,
+      "billed_tokens": 69102,
+      "n_test": 180,
+      "base_rate": 0.325,
+      "emit_fraction": [
+        1.0,
+        1.0
+      ],
+      "n_features": 4,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_block",
+      "strategy": "C",
+      "balanced_accuracy": 0.8194654911144785,
+      "accuracy": 0.8722222222222222,
+      "billed_tokens": 102510,
+      "n_test": 180,
+      "base_rate": 0.325,
+      "emit_fraction": [
+        1.0,
+        1.0
+      ],
+      "n_features": 3,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_rle+pin",
+      "strategy": "A",
+      "balanced_accuracy": 0.8489516474112109,
+      "accuracy": 0.8,
+      "billed_tokens": 33982,
+      "n_test": 180,
+      "base_rate": 0.325,
+      "emit_fraction": [
+        1.0,
+        1.0
+      ],
+      "n_features": 1,
+      "fitted": false,
+      "sampling": "head"
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_rle+pin",
+      "strategy": "A+fit",
+      "balanced_accuracy": 0.9154899443731279,
+      "accuracy": 0.9166666666666666,
+      "billed_tokens": 33982,
+      "n_test": 180,
+      "base_rate": 0.325,
+      "emit_fraction": [
+        1.0,
+        1.0
+      ],
+      "n_features": 1,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_rle+pin",
+      "strategy": "B",
+      "balanced_accuracy": 0.8380402225074882,
+      "accuracy": 0.8944444444444445,
+      "billed_tokens": 56770,
+      "n_test": 180,
+      "base_rate": 0.325,
+      "emit_fraction": [
+        1.0,
+        1.0
+      ],
+      "n_features": 4,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "delay_gt",
+      "encoding": "csv_rle+pin",
+      "strategy": "C",
+      "balanced_accuracy": 0.8305519897304237,
+      "accuracy": 0.8777777777777778,
+      "billed_tokens": 90178,
+      "n_test": 180,
+      "base_rate": 0.325,
+      "emit_fraction": [
+        1.0,
+        1.0
+      ],
+      "n_features": 3,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "row_kv",
+      "strategy": "A",
+      "balanced_accuracy": 0.7394382279059146,
+      "accuracy": 0.8666666666666667,
+      "billed_tokens": 80702,
+      "n_test": 180,
+      "base_rate": 0.12777777777777777,
+      "emit_fraction": [
+        0.8333333333333334,
+        0.825
+      ],
+      "n_features": 1,
+      "fitted": false,
+      "sampling": "head"
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "row_kv",
+      "strategy": "A+fit",
+      "balanced_accuracy": 0.5,
+      "accuracy": 0.8388888888888889,
+      "billed_tokens": 80702,
+      "n_test": 180,
+      "base_rate": 0.12777777777777777,
+      "emit_fraction": [
+        0.8333333333333334,
+        0.825
+      ],
+      "n_features": 1,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "row_kv",
+      "strategy": "B",
+      "balanced_accuracy": 0.6896551724137931,
+      "accuracy": 0.9,
+      "billed_tokens": 109610,
+      "n_test": 180,
+      "base_rate": 0.12777777777777777,
+      "emit_fraction": [
+        0.8333333333333334,
+        0.825
+      ],
+      "n_features": 4,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "row_kv",
+      "strategy": "C",
+      "balanced_accuracy": 0.5,
+      "accuracy": 0.8388888888888889,
+      "billed_tokens": 100538,
+      "n_test": 180,
+      "base_rate": 0.12777777777777777,
+      "emit_fraction": [
+        0.8333333333333334,
+        0.825
+      ],
+      "n_features": 2,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_block",
+      "strategy": "A",
+      "balanced_accuracy": 0.5985876488507339,
+      "accuracy": 0.85,
+      "billed_tokens": 43074,
+      "n_test": 180,
+      "base_rate": 0.12777777777777777,
+      "emit_fraction": [
+        0.8333333333333334,
+        0.825
+      ],
+      "n_features": 1,
+      "fitted": false,
+      "sampling": "head"
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_block",
+      "strategy": "A+fit",
+      "balanced_accuracy": 0.49363057324840764,
+      "accuracy": 0.8611111111111112,
+      "billed_tokens": 43074,
+      "n_test": 180,
+      "base_rate": 0.12777777777777777,
+      "emit_fraction": [
+        0.8333333333333334,
+        0.825
+      ],
+      "n_features": 1,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_block",
+      "strategy": "B",
+      "balanced_accuracy": 0.6055109387981169,
+      "accuracy": 0.8944444444444445,
+      "billed_tokens": 71982,
+      "n_test": 180,
+      "base_rate": 0.12777777777777777,
+      "emit_fraction": [
+        0.8333333333333334,
+        0.825
+      ],
+      "n_features": 4,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_block",
+      "strategy": "C",
+      "balanced_accuracy": 0.6304347826086957,
+      "accuracy": 0.9055555555555556,
+      "billed_tokens": 62910,
+      "n_test": 180,
+      "base_rate": 0.12777777777777777,
+      "emit_fraction": [
+        0.8333333333333334,
+        0.825
+      ],
+      "n_features": 2,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_rle+pin",
+      "strategy": "A",
+      "balanced_accuracy": 0.5509677419354838,
+      "accuracy": 0.8333333333333334,
+      "billed_tokens": 31504,
+      "n_test": 180,
+      "base_rate": 0.12777777777777777,
+      "emit_fraction": [
+        0.8333333333333334,
+        0.825
+      ],
+      "n_features": 1,
+      "fitted": false,
+      "sampling": "head"
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_rle+pin",
+      "strategy": "A+fit",
+      "balanced_accuracy": 0.5,
+      "accuracy": 0.8611111111111112,
+      "billed_tokens": 31504,
+      "n_test": 180,
+      "base_rate": 0.12777777777777777,
+      "emit_fraction": [
+        0.8333333333333334,
+        0.825
+      ],
+      "n_features": 1,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_rle+pin",
+      "strategy": "B",
+      "balanced_accuracy": 0.5,
+      "accuracy": 0.8611111111111112,
+      "billed_tokens": 60412,
+      "n_test": 180,
+      "base_rate": 0.12777777777777777,
+      "emit_fraction": [
+        0.8333333333333334,
+        0.825
+      ],
+      "n_features": 4,
+      "fitted": true,
+      "sampling": "head"
+    },
+    {
+      "predicate": "state_eq",
+      "encoding": "csv_rle+pin",
+      "strategy": "C",
+      "balanced_accuracy": 0.5,
+      "accuracy": 0.8611111111111112,
+      "billed_tokens": 51340,
+      "n_test": 180,
+      "base_rate": 0.12777777777777777,
+      "emit_fraction": [
+        0.8333333333333334,
+        0.825
+      ],
+      "n_features": 2,
+      "fitted": true,
+      "sampling": "head"
+    }
+  ]
+}

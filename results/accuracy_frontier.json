@@ -1,0 +1,73 @@
+{
+  "frontier": [
+    {
+      "encoding": "row_kv",
+      "balanced_accuracy": 0.9612190673305762,
+      "worst": 0.7146912212683467,
+      "accuracy": 0.9685185185185186,
+      "billed_tokens": 83209,
+      "vs_row_kv": 1.0,
+      "cells": 12
+    },
+    {
+      "encoding": "csv_block",
+      "balanced_accuracy": 0.9456323994107768,
+      "worst": 0.6516200498476876,
+      "accuracy": 0.9564814814814815,
+      "billed_tokens": 45152.5,
+      "vs_row_kv": 0.5426396183105193,
+      "cells": 12
+    },
+    {
+      "encoding": "csv_rle",
+      "balanced_accuracy": 0.8458752369755476,
+      "worst": 0.4914843533647189,
+      "accuracy": 0.8826388888888889,
+      "billed_tokens": 33790.416666666664,
+      "vs_row_kv": 0.4060908876043056,
+      "cells": 12
+    },
+    {
+      "encoding": "csv_rle+pin",
+      "balanced_accuracy": 0.9254309886234401,
+      "worst": 0.5116311271116034,
+      "accuracy": 0.9428240740740741,
+      "billed_tokens": 33926.333333333336,
+      "vs_row_kv": 0.40772432469244113,
+      "cells": 12
+    },
+    {
+      "encoding": "columnar_rle",
+      "balanced_accuracy": 0.595490675272751,
+      "worst": 0.4984076433121019,
+      "accuracy": 0.6217592592592592,
+      "billed_tokens": 34855.416666666664,
+      "vs_row_kv": 0.418889983855913,
+      "cells": 12
+    },
+    {
+      "encoding": "columnar_rle+pin",
+      "balanced_accuracy": 0.9024353742992155,
+      "worst": 0.7191358024691358,
+      "accuracy": 0.9053240740740741,
+      "billed_tokens": 37166.25,
+      "vs_row_kv": 0.4466614188369047,
+      "cells": 12
+    },
+    {
+      "encoding": "factored_rle",
+      "balanced_accuracy": 0.8809876327111416,
+      "worst": 0.5529631680974799,
+      "accuracy": 0.9226851851851852,
+      "billed_tokens": 56083.083333333336,
+      "vs_row_kv": 0.6740026118969503,
+      "cells": 12
+    }
+  ],
+  "pareto": [
+    "row_kv",
+    "csv_block",
+    "csv_rle",
+    "csv_rle+pin"
+  ]
+}

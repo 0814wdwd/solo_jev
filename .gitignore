@@ -3,11 +3,23 @@
 .env.local
 *.key
 
-# vendored upstream + model weights
-third_party/jeff/models/
-third_party/jeff/.venv/
+# vendored upstream and model weights: scripts/setup_jeff.sh clones jeff on demand
+third_party/
 
-# outputs
-results/
+# input tables: users bring their own, see jev_solo/datasets.py
+data/
+
+# python
 __pycache__/
 *.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# scratch
+*.tmp
+
+# NOTE: results/ is deliberately NOT ignored. Every number in the README is
+# backed by a file there, and a measurement nobody can re-read is a claim, not
+# a result.

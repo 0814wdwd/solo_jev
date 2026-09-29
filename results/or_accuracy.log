@@ -1,0 +1,23 @@
+# accuracy by encoding   rows/request=40  planner=solo_greedy
+
+## task=gt_delay  n=40  true=20/40
+encoding           acc  billed  answered  tok/correct  latency_ms
+row_kv           97.5%   11297   40/40          289.7         373
+row_json         95.0%   11504   40/40          302.7         370
+csv_block        90.0%    6258   40/40          173.8         295
+csv_rle          95.0%    3364   40/40           88.5         283
+factored_rle     97.5%    4415   40/40          113.2         281
+columnar_rle     62.5%    3426   40/40          137.0         372
+
+## task=gt_state  n=40  true=20/40
+encoding           acc  billed  answered  tok/correct  latency_ms
+row_kv          100.0%   10722   40/40          268.1         320
+row_json         97.5%   10862   40/40          278.5         321
+csv_block        90.0%    5879   40/40          163.3         303
+csv_rle          67.5%    2796   40/40          103.6         270
+factored_rle     77.5%    3381   40/40          109.1         294
+columnar_rle     67.5%    2742   40/40          101.6         295
+
+# 12 calls, $0.003219 billed this run
+
+# wrote results/or_accuracy.json

@@ -1,0 +1,28 @@
+# probe_parallel  state_rows=120 (~4938 proxy tokens)  base_url=https://openrouter.ai/api
+
+n_questions  median_ms   min_ms  billed_tok  ms_per_decision   ok
+          1      297.7    293.3        6377           297.69    3
+          2      325.0    311.3        6393           162.51    3
+          4      275.7    275.5        6425            68.94    3
+          8      285.5    284.5        6489            35.68    3
+         16      301.9    282.0        6624            18.87    3
+         32      315.0    267.3        6896             9.84    3
+         64      276.5    275.4        7440             4.32    3
+        128      323.0    299.5        8541             2.52    3
+        256      368.9    363.0       10728             1.44    3
+        512      420.3    378.3       15104             0.82    3
+
+# flatness: latency relative to a single question
+  n=    1  x  1.00
+  n=    2  x  1.09
+  n=    4  x  0.93
+  n=    8  x  0.96
+  n=   16  x  1.01
+  n=   32  x  1.06
+  n=   64  x  0.93
+  n=  128  x  1.09
+  n=  256  x  1.24
+  n=  512  x  1.41
+  latency stayed within 2x up to n=512: pack as many questions as the 64k budget allows
+
+# wrote results/or_parallel.json

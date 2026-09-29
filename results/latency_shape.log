@@ -1,0 +1,19 @@
+# warm-up sequence: 6 identical short calls back to back
+  call 0:      628ms  in_tok=  305  out_tok=40  cost=$1.281e-05
+  call 1:      301ms  in_tok=  305  out_tok=40  cost=$1.281e-05
+  call 2:      285ms  in_tok=  305  out_tok=40  cost=$1.281e-05
+  call 3:      239ms  in_tok=  305  out_tok=40  cost=$1.281e-05
+  call 4:      260ms  in_tok=  305  out_tok=40  cost=$1.281e-05
+  call 5:      243ms  in_tok=  305  out_tok=40  cost=$1.281e-05
+
+  first=628ms   median_of_rest=260ms   min=239ms
+  -> no cold-start effect; this latency is steady state
+
+# billing identity: does cost == input_tokens/1e6 * $0.042 ?
+   state  in_tok         cost  implied $/Mtok  latency_ms
+   short     305    1.281e-05          0.0420         316
+short+3q     328    1.378e-05          0.0420         280
+  long40    1759    7.388e-05          0.0420         279
+
+# posted price is $0.042/Mtok input, output free
+# 9 calls, $0.000177 spent this run

@@ -1,0 +1,82 @@
+# table=movies  4803 rows x 36 cols
+
+## profit  (numeric compare, 2 cols)  cols=['revenue', 'budget']
+   base_rate=0.739   predicate cols at positions [13, 14]/20, emitted ['100%', '100%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv               99.4%    99.3%    60767   360
+   csv_block            99.4%    99.6%    44667   360
+   csv_rle              99.4%    99.3%    39167   360
+   csv_rle+pin          98.6%    98.0%    39167   360
+   columnar_rle         79.2%    60.5%    40039   360
+   columnar_rle+pin     96.9%    95.2%    42332   360
+   factored_rle         98.9%    98.6%    48313   360
+
+## budget_gt  (numeric threshold, 1 col)  cols=['budget']
+   base_rate=0.231   predicate cols at positions [14]/20, emitted ['100%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv               99.7%    99.8%    61127   360
+   csv_block           100.0%   100.0%    45027   360
+   csv_rle             100.0%   100.0%    39527   360
+   csv_rle+pin         100.0%   100.0%    39527   360
+   columnar_rle         66.1%    71.2%    40399   360
+   columnar_rle+pin     96.9%    98.0%    41566   360
+   factored_rle        100.0%   100.0%    48673   360
+
+## vote_high  (numeric threshold, 1 col)  cols=['vote_average']
+   base_rate=0.397   predicate cols at positions [19]/20, emitted ['100%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv              100.0%   100.0%    61487   360
+   csv_block           100.0%   100.0%    45387   360
+   csv_rle             100.0%   100.0%    39887   360
+   csv_rle+pin         100.0%   100.0%    39887   360
+   columnar_rle         56.1%    63.2%    40759   360
+   columnar_rle+pin     86.7%    88.9%    41893   360
+   factored_rle        100.0%   100.0%    49033   360
+
+## lang_en  (skewed categorical, 1 low-NDV col)  cols=['original_language']
+   base_rate=0.942   predicate cols at positions [8]/20, emitted ['23%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv              100.0%   100.0%    59687   360
+   csv_block           100.0%   100.0%    43587   360
+   csv_rle              86.9%    93.1%    38087   360
+   csv_rle+pin         100.0%   100.0%    38365   360
+   columnar_rle         20.0%    57.5%    38959   360
+   columnar_rle+pin     99.7%    99.9%    40725   360
+   factored_rle         95.6%    97.6%    47233   360
+
+## is_action  (binary flag, 1 very low-NDV col)  cols=['Action']
+   base_rate=0.239   predicate cols at positions [1]/20, emitted ['2%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv              100.0%   100.0%    60767   360
+   csv_block            99.4%    99.2%    44667   360
+   csv_rle              81.7%    62.8%    39167   360
+   csv_rle+pin         100.0%   100.0%    39837   360
+   columnar_rle         77.5%    74.4%    40039   360
+   columnar_rle+pin    100.0%   100.0%    42199   360
+   factored_rle         84.4%    68.2%    48313   360
+
+## long_film  (numeric threshold, 1 col)  cols=['runtime']
+   base_rate=0.242   predicate cols at positions [17]/20, emitted ['100%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv              100.0%   100.0%    61487   360
+   csv_block           100.0%   100.0%    45387   360
+   csv_rle             100.0%   100.0%    39887   360
+   csv_rle+pin         100.0%   100.0%    39887   360
+   columnar_rle         54.4%    60.2%    40759   360
+   columnar_rle+pin     96.9%    98.0%    41912   360
+   factored_rle        100.0%   100.0%    49033   360
+
+## hit  (conjunction, 2 cols)  cols=['vote_average', 'vote_count']
+   base_rate=0.086   predicate cols at positions [19, 20]/20, emitted ['100%', '100%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv              100.0%   100.0%    64367   360
+   csv_block           100.0%   100.0%    48267   360
+   csv_rle             100.0%   100.0%    42767   360
+   csv_rle+pin          99.7%    99.8%    42767   360
+   columnar_rle         79.7%    59.7%    43639   360
+   columnar_rle+pin     93.6%    96.5%    45891   360
+   factored_rle        100.0%   100.0%    51913   360
+
+# 147 calls, $0.093585 billed this run
+
+# wrote results/mv_acc_random.json

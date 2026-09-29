@@ -1,0 +1,13 @@
+# probe_cache  base_url=https://openrouter.ai/api  model=jev-latest  state_rows=80  reps=8
+  repeat  n=8  median=  291.4ms  min=  251.9ms  first=  352.8ms  billed_tokens=4323.0
+  suffix  n=8  median=  280.7ms  min=  244.2ms  first=  326.3ms  billed_tokens=4325.0
+  prefix  n=8  median=  315.4ms  min=  250.1ms  first=  337.4ms  billed_tokens=4325.0
+  fresh   n=8  median=  287.7ms  min=  258.7ms  first=  283.0ms  billed_tokens=4324.0
+
+# verdict
+  billed tokens: repeat=4323 fresh=4324 ratio=1.000
+  latency: repeat/fresh = 1.01  (repeat=291ms fresh=288ms)
+  => no cache credited in the bill
+  Note: latency alone is weak here. On a shared endpoint a real prefix-cache hit can sit inside the noise; the bill cannot.
+
+# wrote results/or_cache.json

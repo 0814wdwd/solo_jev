@@ -1,0 +1,81 @@
+
+## delay_gt  (numeric compare, 2 cols)  cols=['ArrDelay', 'DepDelay']
+   base_rate=0.275   predicate cols at positions [22, 19]/22, emitted ['100%', '99%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv               88.6%    92.1%    85180   360
+   csv_block            81.4%    86.9%    45844   360
+   csv_rle              73.9%    81.7%    34939   360
+   csv_rle+pin          73.9%    82.0%    34964   360
+   columnar_rle         55.6%    55.9%    36344   360
+   columnar_rle+pin     77.8%    83.4%    38702   360
+   factored_rle         87.5%    91.4%    58786   360
+
+## state_eq  (categorical equality, 2 cols)  cols=['OriginState', 'DestState']
+   base_rate=0.100   predicate cols at positions [10, 19]/21, emitted ['90%', '99%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv               99.4%    99.7%    80113   360
+   csv_block            99.7%    99.8%    42577   360
+   csv_rle              98.9%    98.1%    31864   360
+   csv_rle+pin          98.9%    99.4%    31924   360
+   columnar_rle         90.0%    50.0%    32745   360
+   columnar_rle+pin     93.9%    71.9%    35717   360
+   factored_rle         99.4%    97.2%    54099   360
+
+## dist_gt  (numeric threshold, 1 col)  cols=['Distance']
+   base_rate=0.294   predicate cols at positions [19]/21, emitted ['100%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv              100.0%   100.0%    81652   360
+   csv_block            99.7%    99.8%    44476   360
+   csv_rle              99.7%    99.8%    33759   360
+   csv_rle+pin          99.4%    99.6%    33765   360
+   columnar_rle         65.0%    74.4%    34978   360
+   columnar_rle+pin     83.9%    88.6%    36125   360
+   factored_rle        100.0%   100.0%    55639   360
+
+## weekend  (set membership, 1 low-NDV col)  cols=['DayOfWeek']
+   base_rate=0.231   predicate cols at positions [7]/20, emitted ['12%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv               99.7%    99.8%    78313   360
+   csv_block            99.4%    99.6%    41848   360
+   csv_rle              80.6%    67.1%    31158   360
+   csv_rle+pin         100.0%   100.0%    31601   360
+   columnar_rle         53.6%    62.7%    32024   360
+   columnar_rle+pin     96.1%    97.5%    33995   360
+   factored_rle         81.9%    62.5%    52309   360
+
+## carrier_in  (set membership, 1 low-NDV col)  cols=['Reporting_Airline']
+   base_rate=0.564   predicate cols at positions [4]/20, emitted ['2%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv               97.8%    97.5%    77953   360
+   csv_block            98.3%    98.1%    41488   360
+   csv_rle              66.1%    69.7%    30798   360
+   csv_rle+pin         100.0%   100.0%    31306   360
+   columnar_rle         68.1%    63.4%    31664   360
+   columnar_rle+pin     79.2%    81.5%    33984   360
+   factored_rle         81.9%    83.5%    51949   360
+
+## taxi_sum  (arithmetic over 2 cols)  cols=['TaxiOut', 'TaxiIn']
+   base_rate=0.367   predicate cols at positions [22, 19]/22, emitted ['100%', '100%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv               99.4%    99.2%    86409   360
+   csv_block            98.3%    98.5%    47772   360
+   csv_rle              99.4%    99.4%    37108   360
+   csv_rle+pin          99.2%    99.3%    37113   360
+   columnar_rle         46.1%    55.4%    38426   360
+   columnar_rle+pin     94.4%    94.8%    40829   360
+   factored_rle        100.0%   100.0%    60549   360
+
+## conj  (conjunction, 2 cols)  cols=['DepDelay', 'ArrDelay']
+   base_rate=0.219   predicate cols at positions [19, 22]/22, emitted ['99%', '100%'] of rows
+   encoding               acc  bal_acc   billed     n
+   row_kv              100.0%   100.0%    88060   360
+   csv_block            99.7%    99.4%    48724   360
+   csv_rle              98.6%    96.8%    37819   360
+   csv_rle+pin          98.6%    96.8%    37844   360
+   columnar_rle         66.4%    57.5%    39224   360
+   columnar_rle+pin     98.6%    99.1%    41582   360
+   factored_rle        100.0%   100.0%    61666   360
+
+# 147 calls, $0.095244 billed this run
+
+# wrote results/or_acc_random.json
