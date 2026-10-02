@@ -31,7 +31,7 @@ from .datasets import Predicate, TableSpec
 from .encodings import encode_csv_rle, encode_row_kv
 from .objective import encode_columns, prefix_group_counts
 from .pack import pack_requests
-from .plan import apply_order, lex_sort_rows, plan_columns
+from .plan import plan
 from .recalibrate import Calibrator, fit as fit_calibrator
 from .tokens import TokenCounter, get_counter
 
@@ -129,9 +129,8 @@ class Scan:
             keep = self.table.projection(header, pred)
         sub_header = [header[i] for i in keep]
         sub = [[r[i] for i in keep] for r in rows]
-        order, _ = plan_columns(sub, self.planner, self.counter, header=sub_header)
+        ordered, order, _ = plan(sub, self.planner, self.counter, header=sub_header)
         planned = [sub_header[i] for i in order]
-        ordered = lex_sort_rows(apply_order(sub, order))
         pins = tuple(order.index(sub_header.index(c)) for c in pred.cols)
         return planned, ordered, pins
 
