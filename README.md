@@ -84,6 +84,22 @@ Using the value distribution and prefix-combination structure of the relational 
 plan the row and column order so that reusable information forms a contiguous shared
 structure in the encoding.
 
+The planner integer-encodes each column in lexical value order and selects the
+smallest shared unsigned dtype (`uint8`, `uint16`, `uint32` or `uint64`) needed
+by the column cardinalities. Candidate columns are evaluated by scanning
+contiguous prefix groups with a reusable value-indexed stamp array. Only the
+chosen column updates the groups and row permutation, using stable counting
+partitions. Full-table greedy planning reuses that permutation; sampled planning
+partitions all rows separately under the selected column order. Both preserve
+the original stable string-lexicographic order and serialization.
+
+After value encoding, exact greedy planning takes O(M²N) time and O(N + M)
+auxiliary space, in addition to the O(NM) encoded table. Fixed-order row
+partitioning takes O(MN) time. These bounds cover the integer grouping stage;
+encoding still reads the original strings and sorts each column's distinct
+values. Numba compiles and caches the scans, so the first call for a new array
+signature also includes compilation or cache-loading overhead.
+
 The accompanying cost model measures the actually rendered input rather than merely
 comparing raw string lengths. In the reported validation settings on the flight, movies
 and synthetic low-cardinality tables, the error between predicted cost and actual billing
@@ -257,12 +273,25 @@ python -m pip install -e ".[dev]"
 python -m pytest tests/ -q
 ```
 
-The offline parts depend mainly on numpy and tiktoken, and need no API key or network
-access.
+The offline parts use numpy, numba and tiktoken, and need no API key or network
+access once the dependencies and tokenizer assets are installed.
 
 ```
 python3 -m jev_solo.bench_offline --csv table.csv --rows 5000
 ```
+
+The planner-only benchmark compares stable outputs, elapsed time and traced
+allocation peaks with the sorting-based implementation from commit `65b0a21`:
+
+```
+python3 probes/bench_integer_planning.py --out results/integer_planning.json
+```
+
+It runs one process with a 2 GiB address-space limit, using 20,000 rows and 20
+columns by default. Tables are capped at 20,000 rows and 40 columns. Steady-state
+times exclude the separately recorded first call; the process peak RSS also
+includes imports and compilation/cache loading. These synthetic measurements
+cover planning and materialization, not model inference.
 
 ```
 # decision threshold: fitted per experimental configuration, averaged over several splits

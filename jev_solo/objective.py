@@ -24,40 +24,39 @@ from typing import Dict, List, Sequence
 import numpy as np
 
 from .encodings import FACTORED_PREAMBLE, encode
+from ._integer import PrefixGroups, code_dtype
 from .tokens import TokenCounter
 
 
 def encode_columns(rows: Sequence[Sequence[str]]) -> np.ndarray:
-    """Factorize each column independently into compact int codes."""
+    """Encode values into dense, lexicographically ordered integer IDs.
+
+    Use the smallest unsigned dtype needed by the largest column cardinality.
+    Column-major storage keeps candidate scans contiguous. Value dictionaries
+    are temporary; only the compact table survives encoding.
+    """
     if not rows:
-        return np.zeros((0, 0), dtype=np.int64)
+        return np.zeros((0, 0), dtype=np.uint8)
     n_rows, n_cols = len(rows), len(rows[0])
-    out = np.empty((n_rows, n_cols), dtype=np.int64)
+    out = np.empty((n_rows, n_cols), dtype=np.uint8, order="F")
     for c in range(n_cols):
         col = [str(r[c]) for r in rows]
-        _, inv = np.unique(np.asarray(col, dtype=object), return_inverse=True)
-        out[:, c] = inv
+        values = sorted(set(col))
+        dtype = code_dtype(len(values))
+        if dtype.itemsize > out.dtype.itemsize:
+            expanded = np.empty((n_rows, n_cols), dtype=dtype, order="F")
+            expanded[:, :c] = out[:, :c]
+            out = expanded
+        lookup = {value: i for i, value in enumerate(values)}
+        out[:, c] = np.fromiter((lookup[value] for value in col), dtype=out.dtype,
+                               count=n_rows)
     return out
 
 
 def prefix_group_counts(codes: np.ndarray, col_order: Sequence[int]) -> List[int]:
-    """G^(1..m) along the given column order.
-
-    Group ids are re-compacted at every step, so the combined key never
-    overflows int64 -- the failure the handover doc flags for the original
-    greedy_column_order_torch.
-    """
-    n_rows = codes.shape[0]
-    group_ids = np.zeros(n_rows, dtype=np.int64)
-    counts: List[int] = []
-    for c in col_order:
-        col = codes[:, c]
-        k = int(col.max()) + 1 if n_rows else 1
-        combined = group_ids * k + col
-        uniq, inv = np.unique(combined, return_inverse=True)
-        group_ids = inv.astype(np.int64)
-        counts.append(int(uniq.size))
-    return counts
+    """Exact G^(1..m), using linear integer partitions and O(N) workspace."""
+    state = PrefixGroups(codes)
+    return [state.refine(c) for c in col_order]
 
 
 @dataclass

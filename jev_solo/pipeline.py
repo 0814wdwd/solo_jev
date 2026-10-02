@@ -35,7 +35,7 @@ from jev_solo.datasets import Predicate, TableSpec  # noqa: E402
 from jev_solo.encodings import encode_csv_rle, encode_row_kv  # noqa: E402
 from jev_solo.objective import encode_columns, prefix_group_counts  # noqa: E402
 from jev_solo.pack import pack_requests  # noqa: E402
-from jev_solo.plan import apply_order, lex_sort_rows, plan_columns  # noqa: E402
+from jev_solo.plan import plan  # noqa: E402
 from jev_solo.tokens import TokenCounter, get_counter  # noqa: E402
 
 PRICE_PER_MTOK = 0.042
@@ -166,8 +166,7 @@ class Scanner:
         sub_header = [header[i] for i in keep]
         sub = [[r[i] for i in keep] for r in rows]
         jcols = [sub_header.index(c) for c in pred.cols]
-        order, _ = plan_columns(sub, self.planner, self.counter, header=sub_header)
-        ordered = lex_sort_rows(apply_order(sub, order))
+        ordered, order, _ = plan(sub, self.planner, self.counter, header=sub_header)
         planned_header = [sub_header[i] for i in order]
         pins = [order.index(j) for j in jcols]
         truth = [int(bool(pred.truth([r[p] for p in pins]))) for r in ordered]
