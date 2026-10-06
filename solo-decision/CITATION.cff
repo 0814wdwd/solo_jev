@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use SOLO Decision, please cite this software version and the original SOLO paper, Prefix-Cache-Aware Data Reordering for LLM-Augmented Database Analytics."
+type: software
+title: "SOLO Decision: Structured Input Layout Optimizer for Decision Models"
+version: 0.2.0
+authors:
+  - family-names: Li
+    given-names: Yingze
+  - family-names: Wang
+    given-names: Dong
+license: MIT
+repository-code: "https://github.com/0814wdwd/solo_jev"
+abstract: "SOLO Decision reorders complete structured records and their fields to expose reusable prefixes for decision-model inference, then restores decisions to the original input order."
+preferred-citation:
+  type: conference-paper
+  title: "Prefix-Cache-Aware Data Reordering for LLM-Augmented Database Analytics"
+  authors:
+    - family-names: Li
+      given-names: Yingze
+    - family-names: Wang
+      given-names: Dong
+    - family-names: Guo
+      given-names: Yiming
+    - family-names: Chen
+      given-names: Yao
+    - family-names: Wang
+      given-names: Hongzhi
+    - family-names: He
+      given-names: Bingsheng
+  collection-title: "Proceedings of the 43rd International Conference on Machine Learning"
+  volume: 306
+  start: 70693
+  end: 70723
+  year: 2026
+  publisher:
+    name: PMLR
+  url: "https://proceedings.mlr.press/v306/li26gn.html"

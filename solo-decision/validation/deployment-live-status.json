@@ -1,0 +1,7 @@
+{
+  "owned_process_running": true,
+  "decision_adapter_ready": true,
+  "url": "http://127.0.0.1:8000",
+  "pid": 8451,
+  "log": "/root/autodl-tmp/solo-decision/deploy/runtime/server.log"
+}

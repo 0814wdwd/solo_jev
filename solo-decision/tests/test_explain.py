@@ -4,7 +4,7 @@ from os.path import commonprefix
 import numpy as np
 import pytest
 
-from solo_decision import LayoutOptimizer, read_json
+from solo_decision import DecisionEngine, LayoutOptimizer, read_json
 
 
 def test_prefix_group_curve_captures_correlation_beyond_marginal_ndv():
@@ -37,6 +37,19 @@ def test_byte_diagnostic_matches_independent_full_serialization_with_unicode():
         assert report["adjacent_prefix_bytes"] == expected
         assert report["adjacent_prefix_fraction"] == expected / sum(map(len, serialized))
     assert len({row["serialized_bytes"] for row in result.layouts}) == 1
+
+
+def test_explain_makes_no_backend_calls():
+    class NoNetwork:
+        def prepare(self, *args, **kwargs):
+            raise AssertionError("offline explanation prepared backend")
+
+        def decide(self, *args, **kwargs):
+            raise AssertionError("offline explanation called inference")
+
+    with DecisionEngine(backend=NoNetwork()) as engine:
+        result = engine.explain(np.array([["1", "same"], ["2", "same"]]), columns=["id", "value"])
+        assert len(result.layouts) == 4
 
 
 @pytest.mark.parametrize("data", [[], [[], []], [{}, {}]])

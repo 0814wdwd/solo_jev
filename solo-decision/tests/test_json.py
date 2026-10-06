@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from solo_decision import JSONInput, LayoutOptimizer, read_json
+from solo_decision import DecisionEngine, DecisionResponse, JSONInput, LayoutOptimizer, read_json
 from solo_decision._table import Serializer, as_table
 
 
@@ -13,6 +13,19 @@ def render(data):
     table = as_table(data)
     serializer = Serializer(table, range(table.shape[1]))
     return [json.loads(serializer(i)) for i in range(len(table))]
+
+
+class JSONBackend:
+    supports_cache_salt = True
+
+    def __init__(self):
+        self.rows = []
+
+    def decide(self, state, spec, *, cache_salt=None):
+        row = json.loads(state)
+        self.rows.append(row)
+        assert isinstance(row["amount"], int)
+        return DecisionResponse((0.1, 0.9) if row["amount"] > 1 else (0.9, 0.1))
 
 
 def test_json_types_nested_arrays_and_key_paths_are_preserved():
@@ -99,6 +112,22 @@ def test_json_input_does_not_alias_caller_nested_values():
     source = read_json(records)
     records[0]["a"][1]["b"] = 100
     assert render(source) == [{"a": [1, {"b": 2}]}]
+
+
+def test_scan_and_compare_json_restore_original_order(tmp_path):
+    records = [{"amount": 3, "meta": {"kind": "same"}},
+               {"amount": 1, "meta": {"kind": "same"}},
+               {"amount": 2, "meta": {"kind": "other"}}]
+    path = tmp_path / "rows.json"
+    path.write_text(json.dumps(records))
+    backend = JSONBackend()
+    with DecisionEngine(backend=backend, concurrency=2) as engine:
+        result = engine.scan(path, "amount exceeds one?")
+        assert result.decisions.tolist() == [True, False, True]
+        compared = engine.compare(path, "amount exceeds one?", methods=("original", "solo"),
+                                  repeats=2, truth=[True, False, True])
+        assert all(row["rows"] == 3 and row["accuracy"] == 1 for row in compared.summary)
+        assert engine.scan(records[0], "amount exceeds one?").decisions.tolist() == [True]
 
 
 def test_empty_json_and_empty_objects():

@@ -1,0 +1,105 @@
+{
+  "python": "3.10.8",
+  "packages": {
+    "solo-decision": "0.1.0",
+    "numpy": "2.2.6",
+    "numba": "0.65.0",
+    "pandas": "2.3.3",
+    "vllm": "0.31.0"
+  },
+  "cases": [
+    {
+      "kind": "noul",
+      "decisions": [
+        true
+      ],
+      "probabilities": [
+        [
+          0.0058686023676897785,
+          0.9941313976323103
+        ]
+      ],
+      "metrics": {
+        "method": "solo",
+        "rows": 1,
+        "wall_seconds": 2.056530228815973,
+        "rows_per_second": 0.48625592076793356,
+        "preparation_seconds": 0.00036565400660037994,
+        "planning_seconds": 0.00022283755242824554,
+        "inference_seconds": 2.055839342996478,
+        "prompt_tokens": 48,
+        "cached_tokens": 0,
+        "cached_fraction": 0.0,
+        "latency_p50_seconds": 2.0552097810432315,
+        "latency_p95_seconds": 2.0552097810432315,
+        "column_order": [
+          "message"
+        ]
+      }
+    },
+    {
+      "kind": "choice",
+      "decisions": [
+        "billing"
+      ],
+      "probabilities": [
+        [
+          0.9995859570948123,
+          0.00013315006640352378,
+          0.0002808928387840244
+        ]
+      ],
+      "metrics": {
+        "method": "solo",
+        "rows": 1,
+        "wall_seconds": 0.12733673676848412,
+        "rows_per_second": 7.8531932369064785,
+        "preparation_seconds": 0.00023300666362047195,
+        "planning_seconds": 0.0003858935087919235,
+        "inference_seconds": 0.12667330354452133,
+        "prompt_tokens": 53,
+        "cached_tokens": 0,
+        "cached_fraction": 0.0,
+        "latency_p50_seconds": 0.1263654688373208,
+        "latency_p95_seconds": 0.1263654688373208,
+        "column_order": [
+          "message"
+        ]
+      }
+    },
+    {
+      "kind": "score",
+      "decisions": [
+        5
+      ],
+      "probabilities": [
+        [
+          0.005178465863520656,
+          0.004113464089577728,
+          0.00049678806029815,
+          0.0018779144016359771,
+          0.002676789249836647,
+          0.985656578335131
+        ]
+      ],
+      "metrics": {
+        "method": "solo",
+        "rows": 1,
+        "wall_seconds": 0.11493335105478764,
+        "rows_per_second": 8.700694714133146,
+        "preparation_seconds": 0.00010592769831418991,
+        "planning_seconds": 0.00015446171164512634,
+        "inference_seconds": 0.11462025158107281,
+        "prompt_tokens": 63,
+        "cached_tokens": 0,
+        "cached_fraction": 0.0,
+        "latency_p50_seconds": 0.11432682443410158,
+        "latency_p95_seconds": 0.11432682443410158,
+        "column_order": [
+          "message"
+        ]
+      }
+    }
+  ],
+  "passed": true
+}

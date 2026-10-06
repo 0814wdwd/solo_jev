@@ -1,0 +1,17 @@
+{
+  "model": "autotrust/JEV-9B",
+  "revision": "b63f651ce8ed64481d3f5e73ecdb05f740042f01",
+  "served_model": "jev-decision",
+  "vllm": "0.31.0",
+  "tested_gpu": "NVIDIA GeForce RTX 4090 24 GB",
+  "tested_driver": "595.71.05",
+  "tested_python": "3.10.8",
+  "precision": "bfloat16",
+  "max_model_len": 16384,
+  "max_num_seqs": 4,
+  "max_num_batched_tokens": 2048,
+  "gpu_memory_utilization": 0.90,
+  "prefix_caching": true,
+  "mamba_cache_mode": "align",
+  "enforce_eager": true
+}
