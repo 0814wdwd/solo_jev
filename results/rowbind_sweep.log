@@ -1,8 +1,0 @@
-## delay_gt  窄投影（仅 ['ArrDelay', 'DepDelay']）  n=1200
-    block  requests  bal@0.5  bal@fit  tok/row
-        1       300   100.0%   100.0%    338.0
-       10       120    95.3%    94.0%     74.6
-       30        40    97.0%    96.5%     56.2
-       60        20    93.7%    95.6%     51.6
-      120        10    93.1%    94.3%     49.7
-# 490 calls, $0.015957 billed this run
