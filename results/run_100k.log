@@ -1,9 +1,0 @@
-# flight/weekend: calibrating on 600, scanning 99,400
-# calibrated in 4.7s: threshold=0.97, platt(a=3.00, b=-0.80), ECE 0.018->0.000, AUC=1.000
-99,400 rows x 1 predicates on flight
-  1,657 requests, 3,929,704 billed tokens ($0.1650), 39.5 tokens/row
-  556.8s wall (0.0s waiting on the rate limiter), 179 rows/s
-  one request per row would have used 99,400 requests: 83 min of the 1200/min quota on request count alone
-  balanced accuracy: 100.0% at 0.5, 99.8% at the calibrated threshold 0.97
-  base rate 0.270, 99,400 of 99,400 rows answered
-# wrote results/run_100k.json

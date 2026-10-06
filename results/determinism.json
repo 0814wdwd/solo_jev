@@ -1,9 +1,0 @@
-{
-  "identical": false,
-  "repeat_spread": 0.48,
-  "reorder_delta": 0.14999999999999997,
-  "shifted_id_delta": 0.5599999999999999,
-  "verdict": "varies run to run -- single measurements carry real noise",
-  "rows": 60,
-  "reps": 5
-}

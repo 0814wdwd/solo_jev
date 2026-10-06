@@ -1,25 +1,13 @@
-# credentials -- never commit
-.env
-.env.local
-*.key
-
-# vendored upstream and model weights: scripts/setup_jeff.sh clones jeff on demand
-third_party/
-
-# input tables: users bring their own, see jev_solo/datasets.py
-data/
-
-# python
+.venv/
 __pycache__/
-*.pyc
 *.egg-info/
+.pytest_cache/
 build/
 dist/
-.pytest_cache/
-
-# scratch
-*.tmp
-
-# NOTE: results/ is deliberately NOT ignored. Every number in the README is
-# backed by a file there, and a measurement nobody can re-read is a claim, not
-# a result.
+deploy/runtime/
+deploy/models/
+deploy/.venv/
+.env
+.env.*
+!.env.example
+*.log
