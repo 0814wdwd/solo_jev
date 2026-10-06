@@ -1,0 +1,32 @@
+{
+  "package_version": "0.2.0",
+  "python_version": "3.12.3",
+  "client_tests_passed": 64,
+  "deployment_tests_passed": 3,
+  "wheel_installed_in_separate_venv": true,
+  "import_from_outside_checkout": true,
+  "native_json_roundtrip_from_installed_wheel": true,
+  "core_import_excludes_torch_transformers_pandas": true,
+  "wheel_contains_only_client_and_metadata": true,
+  "original_snapshot_files_verified_unchanged": 252,
+  "measured_benchmark_trials": 22,
+  "benchmark_provenance": "benchmark-provenance.json",
+  "layout_compatibility": "layout-compatibility.json",
+  "ci_workflow_added": true,
+  "hosted_ci_status": "Not run: this workspace has not been pushed to GitHub",
+  "client_source_sha256": {
+    "__init__.py": "5da3748934b47ceffffeb4ffbf0b686d1150fdf99a750dceb58a4cd7b4ca59f4",
+    "_integer.py": "4b512b0d08a5f88bfa66df5940fac17f7d2b29080e2b7400237c06613469cd8d",
+    "_table.py": "956a5a2e5b6b067e550b3333a8a985a4db5bf17dec4a8234bb8403647d72ee4a",
+    "backend.py": "9aac1edd25d24d711a26a907ad06a67f0b8e1e54b4ec065c15a1d30a9288416f",
+    "engine.py": "3305f522577702d30bc0b634ad80521dabbdd255ba4a9d8d1665c5010693812d",
+    "layout.py": "b047ada72ccbe5bf739b83e337b4241d932fb2f539df30aa9c090f02c65c834e"
+  },
+  "live_client_inputs_passed": 6,
+  "live_all_three_heads_passed": true,
+  "server_python": "3.10.8",
+  "managed_gpu_start_and_repeated_up_passed": true,
+  "offline_demo_with_provenance_passed": true,
+  "live_prefix_cache_check": "cache-live-v020.json",
+  "live_prefix_cache_passed": true
+}

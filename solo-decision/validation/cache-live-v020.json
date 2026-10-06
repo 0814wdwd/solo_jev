@@ -1,0 +1,8 @@
+{
+  "purpose": "Prefix-cache capability check after managed server startup, not a speedup benchmark",
+  "client_concurrency": 1,
+  "rows": 8,
+  "prompt_tokens": 15768,
+  "cached_tokens": 11088,
+  "all_expected_decisions": true
+}

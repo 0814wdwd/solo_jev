@@ -1,0 +1,15 @@
+include demo.py
+include planner-provenance.json
+include CONTRIBUTING.md
+include CITATION.cff
+include .gitignore
+recursive-include .github/workflows *.yml
+recursive-include deploy *.sh *.py *.json *.txt
+recursive-include docs *.md *.svg *.png *.gif *.pdf
+recursive-include assets *.svg *.png *.gif *.pdf
+recursive-include examples *.py *.json *.jsonl
+recursive-include scripts *.py
+recursive-include validation *.json
+recursive-exclude deploy/runtime *
+recursive-exclude deploy/models *
+recursive-exclude deploy/.venv *

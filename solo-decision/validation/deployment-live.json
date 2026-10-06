@@ -1,0 +1,25 @@
+{
+  "checked_utc": "2026-10-06T07:14:50.466516+00:00",
+  "server_gpu": "RTX 4090 24GB",
+  "python_version": "3.10.8",
+  "client_version": "0.2.0",
+  "managed_start_passed": true,
+  "up_reuses_healthy_owned_server": true,
+  "fresh_environment_installation_retested": false,
+  "reused_existing_pinned_environment_and_weights": true,
+  "service_status": "deployment-live-status.json",
+  "client_checks": "live-api-v020.json",
+  "script_sha256": {
+    "control.py": "a181182272f8bb3a79ceaff21199860b8d83f829abdc882bd1610624bce8d613",
+    "deployment.json": "c42fe6e11f33f748b71d8980d8a5e914fa5d1fbf91407e20f76a7f76fb113ceb",
+    "download.py": "268bb2bb4b3346be43587ac856eefdfb78542414d306369324592aa3ac4bd425",
+    "fix_vllm_warmup.py": "3831e56139b895e597eaff5a1866e8d074d1fbc3011a28e0afd7e95bbedcf45d",
+    "jev9b.sh": "e011556bd53ed804cb24b003a1de5956bee16019fe840f2e3b44e5d038f22d5b",
+    "requirements-gpu.txt": "80e9ba09460517d557592831fcefac3e6340ccb82191f08f34a364848419131b",
+    "serve.sh": "10e9ffc151d793785fbf82fae5a9622b68cb42dc16210f4492f04db117fb9fd2",
+    "test_deploy.py": "fb9512c525c1d9d2a745f35ba8714d8c122250eb3eb9a934b662ae62771df0bb"
+  },
+  "actual_prefix_cache_hits_verified": true,
+  "cache_check": "cache-live-v020.json",
+  "default_paths_without_python_on_ssh_path_verified": true
+}

@@ -1,0 +1,38 @@
+name: Test and build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install '.[dev]'
+      - name: Offline tests (no GPU, API key or model download)
+        run: python -m pytest
+      - name: Offline example
+        run: python examples/offline_layout.py
+      - name: Deployment syntax
+        run: |
+          bash -n deploy/jev9b.sh deploy/serve.sh
+          bash deploy/jev9b.sh help
+          python -m compileall -q deploy
+          python -m unittest discover -s deploy -p 'test_*.py'
+      - name: Build source and wheel
+        run: python -m build
+      - name: Install the built client outside the checkout
+        run: |
+          python -m venv /tmp/solo-wheel
+          /tmp/solo-wheel/bin/python -m pip install dist/*.whl
+          cd /tmp
+          /tmp/solo-wheel/bin/python -c 'from solo_decision import LayoutOptimizer; p = LayoutOptimizer().plan([["a", "x"], ["a", "y"]], columns=["a", "b"]); assert len(p.row_order) == 2'
