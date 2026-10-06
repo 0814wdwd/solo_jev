@@ -1,0 +1,22 @@
+{
+  "pytest_passed": 36,
+  "python_version": "3.12",
+  "wheel_installed_in_separate_venv": true,
+  "import_from_outside_checkout": true,
+  "offline_planning_without_torch_transformers_pandas_imports": true,
+  "wheel_excludes_research_modules_and_server_dependencies": true,
+  "source_distribution_includes_demo": true,
+  "live_service_validation": "passed: installed wheel on RTX 4090, all three decision heads, pandas/NumPy/records inputs",
+  "server_python": "3.10.8",
+  "live_benchmark_trials": 10,
+  "input_tokens_identical_across_methods": true,
+  "live_results_all_accurate": true,
+  "client_source_sha256": {
+    "_table.py": "1ebb0673b01f7be1de5b2ad82aaf05c17a70a70a882bf2a17872248f9a86da61",
+    "engine.py": "fb1050cbca0637e3fb5aeef2d2e07bbf4b34aa2f3490d983d4d7973986d8b52b",
+    "layout.py": "ae8d5d9a34fb2a5cacdabf7ac219af33a201f0661d81b26f049ebd5cea8b427e",
+    "_integer.py": "4b512b0d08a5f88bfa66df5940fac17f7d2b29080e2b7400237c06613469cd8d",
+    "backend.py": "9aac1edd25d24d711a26a907ad06a67f0b8e1e54b4ec065c15a1d30a9288416f",
+    "__init__.py": "0b36cee4b44d36eac81198fba10a47ff38c1ce32feea6aa6eb49b48e57064276"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "rows": 20000,
+  "columns": 20,
+  "exact_outputs_match": true,
+  "integer_kernel_identical": true,
+  "sha256": "4b512b0d08a5f88bfa66df5940fac17f7d2b29080e2b7400237c06613469cd8d",
+  "steady_state": {
+    "upstream": {
+      "seconds": [
+        1.1289094830281101,
+        0.9685881659970619,
+        0.8486892629880458
+      ],
+      "median_seconds": 0.9685881659970619
+    },
+    "package": {
+      "seconds": [
+        0.7228307999903336,
+        0.7532997850212269,
+        0.9069756079697981
+      ],
+      "median_seconds": 0.7532997850212269
+    }
+  },
+  "scope": "Full-table planner and public input normalization; upstream includes materialization, package returns permutations. First calls excluded after exact-output validation."
+}

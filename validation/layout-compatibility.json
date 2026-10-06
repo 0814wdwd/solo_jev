@@ -1,0 +1,50 @@
+{
+  "old_client_version": "0.1.0",
+  "new_client_version": "0.2.0",
+  "workloads": [
+    "correlated",
+    "shared-0.8",
+    "shared-0.97",
+    "shared-0.983"
+  ],
+  "methods": [
+    "original",
+    "lexicographic",
+    "random",
+    "cardinality",
+    "solo"
+  ],
+  "row_and_column_permutations_identical": true,
+  "serialized_full_record_bytes_identical": true,
+  "cases": {
+    "correlated": {
+      "original": "e73fb2a644462fef31bb19a17fabf1b7e22327e4b0d34f1acab34df98a2e77eb",
+      "lexicographic": "5f03e29a20442f8c2cc8bba8c00b50509d231783895b55f6ec787ce638f27755",
+      "random": "5c686dca1bfa35897fe5321bad1a682bf9d7069d32aba3842bfb86651ab32cbd",
+      "cardinality": "5f03e29a20442f8c2cc8bba8c00b50509d231783895b55f6ec787ce638f27755",
+      "solo": "d87992bd9b05fc04a646b6808ceb40a8178717075217c74ef5bb33c5a043aa2b"
+    },
+    "shared-0.8": {
+      "original": "dd2328ee76fde8021f5bef5c2f3d88a0a982012f25220e11f5b4b46cc195fa0b",
+      "lexicographic": "e37d6d694da2a563b3643fac2df3a5a4978dd735948e468afc13c1ea1c6f4c28",
+      "random": "79b3a9570093cfe843b032c3fb340bcf95e3e18263b38e9b5e0b49ec384448ca",
+      "cardinality": "ab19a3907aafd4f92af04546ee1cc1c9cd5147b0b61d3996b73b4a89eaabbabf",
+      "solo": "ab19a3907aafd4f92af04546ee1cc1c9cd5147b0b61d3996b73b4a89eaabbabf"
+    },
+    "shared-0.97": {
+      "original": "f4fb09df89212ed86b16310658e02315166f1f2a922b18e3583a1b727d51895e",
+      "lexicographic": "ee03bea70f2c4adc5bb21a9f4f4592243b34603f15c0757fcb82b6a771b188fc",
+      "random": "eae517c27f1df50c3abda58e37c840705db5122a9913db2b4b36f95999b087a6",
+      "cardinality": "203b8f2ae180e57efcfd632b1d32ee5f4cca3912ea433a21f05adf23f0d8959c",
+      "solo": "203b8f2ae180e57efcfd632b1d32ee5f4cca3912ea433a21f05adf23f0d8959c"
+    },
+    "shared-0.983": {
+      "original": "6346819255065ec9addcb1518cda1312ae684d90ae83e78248747e84667d46f2",
+      "lexicographic": "af5578ea5287011e0c88b8677aa459669aabdf163381791f8db6d7f9c94aaff3",
+      "random": "b80f8b12c68d22f55bbb6b90f73f980519b695d04174a652a16b0e665cb63426",
+      "cardinality": "c426192f89a942528cc29078490257eb0fdd234541926c147a1543455076ee53",
+      "solo": "c426192f89a942528cc29078490257eb0fdd234541926c147a1543455076ee53"
+    }
+  },
+  "integer_kernel_sha256": "4b512b0d08a5f88bfa66df5940fac17f7d2b29080e2b7400237c06613469cd8d"
+}

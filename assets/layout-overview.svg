@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" role="img" aria-labelledby="title desc">
+<title id="title">SOLO changes input layout to expose reusable prefixes</title>
+<desc id="desc">Before, each row starts with its unique identifier. After, shared policy and account fields are first, followed by unique values. Every field is still sent, and output decisions are restored to the original row order.</desc>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="none" stroke="#71819a" stroke-width="1.5"/></marker></defs>
+<rect width="1200" height="380" rx="22" fill="#f5f8fc"/>
+<g font-family="DejaVu Sans,Arial,sans-serif" fill="#16243b">
+<text x="38" y="47" font-size="23" font-weight="700">Same records. Better layout. More shared computation.</text>
+<text x="38" y="79" font-size="14" fill="#627086">A layout optimizer between your data and a prefix-caching decision model</text>
+<text x="38" y="121" font-size="16" font-weight="700">Original order</text>
+<text x="579" y="121" font-size="16" font-weight="700">SOLO order</text>
+<g font-size="14" text-anchor="middle">
+<rect x="38" y="139" width="83" height="38" rx="6" fill="#f4d8c6"/><text x="79" y="163">id: 103</text><rect x="127" y="139" width="185" height="38" rx="6" fill="#d7e2f4"/><text x="219" y="163">policy: standard</text><rect x="318" y="139" width="144" height="38" rx="6" fill="#d7e2f4"/><text x="390" y="163">region: north</text>
+<rect x="38" y="187" width="83" height="38" rx="6" fill="#f4d8c6"/><text x="79" y="211">id: 201</text><rect x="127" y="187" width="185" height="38" rx="6" fill="#cfece2"/><text x="219" y="211">policy: premium</text><rect x="318" y="187" width="144" height="38" rx="6" fill="#cfece2"/><text x="390" y="211">region: south</text>
+<rect x="38" y="235" width="83" height="38" rx="6" fill="#f4d8c6"/><text x="79" y="259">id: 104</text><rect x="127" y="235" width="185" height="38" rx="6" fill="#d7e2f4"/><text x="219" y="259">policy: standard</text><rect x="318" y="235" width="144" height="38" rx="6" fill="#d7e2f4"/><text x="390" y="259">region: north</text>
+<rect x="579" y="139" width="185" height="38" rx="6" fill="#d7e2f4"/><text x="671" y="163">policy: standard</text><rect x="770" y="139" width="144" height="38" rx="6" fill="#d7e2f4"/><text x="842" y="163">region: north</text><rect x="920" y="139" width="83" height="38" rx="6" fill="#f4d8c6"/><text x="961" y="163">id: 103</text>
+<rect x="579" y="187" width="185" height="38" rx="6" fill="#d7e2f4"/><text x="671" y="211">policy: standard</text><rect x="770" y="187" width="144" height="38" rx="6" fill="#d7e2f4"/><text x="842" y="211">region: north</text><rect x="920" y="187" width="83" height="38" rx="6" fill="#f4d8c6"/><text x="961" y="211">id: 104</text>
+<rect x="579" y="235" width="185" height="38" rx="6" fill="#cfece2"/><text x="671" y="259">policy: premium</text><rect x="770" y="235" width="144" height="38" rx="6" fill="#cfece2"/><text x="842" y="259">region: south</text><rect x="920" y="235" width="83" height="38" rx="6" fill="#f4d8c6"/><text x="961" y="259">id: 201</text>
+<rect x="1052" y="148" width="110" height="116" rx="12" fill="#fff" stroke="#cad5e3"/><text x="1107" y="187" font-size="15" font-weight="700">Decision</text><text x="1107" y="209" font-size="15" font-weight="700">model</text><text x="1107" y="239" font-size="12" fill="#627086">prefix cache</text>
+</g>
+<path d="M478,206 L552,206" stroke="#71819a" stroke-width="2" marker-end="url(#arrow)"/><path d="M1016,206 L1041,206" stroke="#71819a" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="574" y="133" width="345" height="98" rx="10" fill="none" stroke="#008f7a" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="38" y="305" font-size="13" fill="#627086">Unique fields break shared prefixes early.</text><text x="579" y="305" font-size="13" fill="#008f7a">Repeated prefixes become reusable by the server.</text>
+<text x="38" y="350" font-size="14" font-weight="700">Pandas · NumPy · JSON / JSONL</text><text x="430" y="350" font-size="14">Full records in every request</text><text x="805" y="350" font-size="14">Decisions in original row order</text>
+</g></svg>

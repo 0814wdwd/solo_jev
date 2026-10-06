@@ -1,0 +1,5 @@
+# Measured JEV-9B environment. Install only on a CUDA-capable Linux server.
+vllm==0.31.0
+torch==2.13.0
+transformers==5.17.0
+huggingface-hub==1.33.0

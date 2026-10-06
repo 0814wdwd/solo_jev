@@ -1,0 +1,147 @@
+{
+  "configuration": {
+    "url": "http://127.0.0.1:8000",
+    "model_dir": "jev9b-deploy/models/JEV-9B",
+    "workload": "correlated",
+    "rows": 32,
+    "cardinality": 4,
+    "correlated_columns": 6,
+    "field_tokens": [
+      128
+    ],
+    "repeat_ratios": [
+      0.8,
+      0.97,
+      0.983
+    ],
+    "methods": [
+      "original",
+      "lexicographic",
+      "random",
+      "cardinality",
+      "solo"
+    ],
+    "repeats": 2,
+    "concurrency": 4,
+    "max_context_tokens": 16384,
+    "seed": 42,
+    "dry_run": true,
+    "out": "solo-decision/validation/correlated-dry-run.json"
+  },
+  "measurement": "Fresh cache_salt per trial, identical backend and concurrency; alternating method order. Timed scans include normalization, planning, serialization, network and initial cache fills. Kernel/planner warmup is separate.",
+  "cases": [
+    {
+      "workload": {
+        "family": "equal_ndv_correlated",
+        "cardinality": 4,
+        "correlated_columns": 6,
+        "tokens_per_field": 128,
+        "construction": "A columns are bijective copies of one latent variable; request and B use two other balanced variables. All columns have identical marginal NDV and token length. No identifier column.",
+        "rows": 32,
+        "columns": 8,
+        "synthetic": true,
+        "dataset_sha256": "207dda17724bb5d11bd64cf4765b1c41e2305f22c7bf3c73fa5a8f4543de5a08",
+        "column_ndv": {
+          "a_00": 4,
+          "customer_request": 4,
+          "b_00": 4,
+          "a_01": 4,
+          "a_02": 4,
+          "a_03": 4,
+          "a_04": 4,
+          "a_05": 4
+        },
+        "all_column_ndv_equal": true,
+        "field_token_ranges": {
+          "a_00": [
+            128,
+            128
+          ],
+          "customer_request": [
+            128,
+            128
+          ],
+          "b_00": [
+            128,
+            128
+          ],
+          "a_01": [
+            128,
+            128
+          ],
+          "a_02": [
+            128,
+            128
+          ],
+          "a_03": [
+            128,
+            128
+          ],
+          "a_04": [
+            128,
+            128
+          ],
+          "a_05": [
+            128,
+            128
+          ]
+        },
+        "reusable_value_token_fraction": 1.0,
+        "reuse_definition": "Fraction of cell-value tokens in columns whose whole-field NDV is less than row count; this is not the prefix-cache hit rate.",
+        "prefix_distinct_counts": {
+          "original": [
+            4,
+            12,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "lexicographic": [
+            4,
+            12,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "random": [
+            4,
+            4,
+            4,
+            4,
+            16,
+            16,
+            16,
+            32
+          ],
+          "cardinality": [
+            4,
+            12,
+            32,
+            32,
+            32,
+            32,
+            32,
+            32
+          ],
+          "solo": [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            12,
+            32
+          ]
+        },
+        "max_prompt_tokens_across_methods": 1105
+      }
+    }
+  ]
+}

@@ -1,0 +1,770 @@
+{
+  "configuration": {
+    "url": "http://127.0.0.1:8000",
+    "model_dir": "/root/autodl-tmp/jev9b-deploy/models/JEV-9B",
+    "workload": "shared",
+    "rows": 128,
+    "cardinality": 8,
+    "correlated_columns": 12,
+    "field_tokens": [
+      128,
+      512
+    ],
+    "repeat_ratios": [
+      0.8,
+      0.97,
+      0.983
+    ],
+    "methods": [
+      "original",
+      "solo"
+    ],
+    "repeats": 2,
+    "concurrency": 4,
+    "max_context_tokens": 16384,
+    "seed": 42,
+    "dry_run": false,
+    "out": "validation/shared-live.json"
+  },
+  "measurement": "Fresh cache_salt per trial, identical backend and concurrency; alternating method order. Timed scans include normalization, planning, serialization, network and initial cache fills. Kernel/planner warmup is separate.",
+  "cases": [
+    {
+      "workload": {
+        "family": "shared_fields",
+        "target_reusable_value_token_fraction": 0.8,
+        "constant_field_token_budget": 132,
+        "construction": "Unique ID and customer message first; eight reusable template fields, including two long global constants. Synthetic dummy padding; complete rows sent in every method.",
+        "rows": 128,
+        "columns": 10,
+        "synthetic": true,
+        "dataset_sha256": "e755eb3d58cfecafed7b730699a7168833f0a3ad116dd66c047c78600fdd9e75",
+        "column_ndv": {
+          "record_id": 128,
+          "customer_request": 128,
+          "company_policy": 1,
+          "service_context": 1,
+          "profile_0": 4,
+          "profile_1": 8,
+          "profile_2": 16,
+          "profile_3": 32,
+          "profile_4": 64,
+          "profile_5": 64
+        },
+        "all_column_ndv_equal": false,
+        "field_token_ranges": {
+          "record_id": [
+            23,
+            34
+          ],
+          "customer_request": [
+            230,
+            241
+          ],
+          "company_policy": [
+            132,
+            132
+          ],
+          "service_context": [
+            132,
+            132
+          ],
+          "profile_0": [
+            132,
+            132
+          ],
+          "profile_1": [
+            132,
+            132
+          ],
+          "profile_2": [
+            132,
+            132
+          ],
+          "profile_3": [
+            132,
+            132
+          ],
+          "profile_4": [
+            132,
+            132
+          ],
+          "profile_5": [
+            132,
+            132
+          ]
+        },
+        "reusable_value_token_fraction": 0.8,
+        "reuse_definition": "Fraction of cell-value tokens in columns whose whole-field NDV is less than row count; this is not the prefix-cache hit rate.",
+        "prefix_distinct_counts": {
+          "original": [
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128
+          ],
+          "solo": [
+            1,
+            1,
+            4,
+            8,
+            16,
+            32,
+            64,
+            64,
+            128,
+            128
+          ]
+        },
+        "max_prompt_tokens_across_methods": 1401
+      },
+      "summary": [
+        {
+          "method": "original",
+          "rows": 128,
+          "repeats": 2,
+          "wall_seconds": 21.35865343315527,
+          "planning_seconds": 8.695665746927261e-05,
+          "prompt_tokens": 179310.0,
+          "cached_tokens": 0.0,
+          "cached_fraction": 0.0,
+          "accuracy": 1.0,
+          "rows_per_second": 5.992887164005584,
+          "agreement_with_original": 1.0,
+          "speedup_vs_original": 1.0,
+          "solo_speedup_vs_this_method": 1.4925912569880038
+        },
+        {
+          "method": "solo",
+          "rows": 128,
+          "repeats": 2,
+          "wall_seconds": 14.309780613519251,
+          "planning_seconds": 0.0007363124750554562,
+          "prompt_tokens": 179310.0,
+          "cached_tokens": 92928.0,
+          "cached_fraction": 0.5182533043332775,
+          "accuracy": 1.0,
+          "rows_per_second": 8.944930985110368,
+          "agreement_with_original": 1.0,
+          "speedup_vs_original": 1.4925912569880038,
+          "solo_speedup_vs_this_method": 1.0
+        }
+      ],
+      "runs": [
+        {
+          "method": "original",
+          "rows": 128,
+          "wall_seconds": 20.586928449571133,
+          "rows_per_second": 6.217537517242719,
+          "preparation_seconds": 0.0011286241933703423,
+          "planning_seconds": 6.333459168672562e-05,
+          "inference_seconds": 20.585635418072343,
+          "prompt_tokens": 179310,
+          "cached_tokens": 0,
+          "cached_fraction": 0.0,
+          "latency_p50_seconds": 0.6348446640186012,
+          "latency_p95_seconds": 0.7411252505611624,
+          "column_order": [
+            "record_id",
+            "customer_request",
+            "company_policy",
+            "service_context",
+            "profile_0",
+            "profile_1",
+            "profile_2",
+            "profile_3",
+            "profile_4",
+            "profile_5"
+          ],
+          "repeat": 0,
+          "cache_salt": "7abd205aa11c4e0b9675cc75e32904b3",
+          "accuracy": 1.0
+        },
+        {
+          "method": "solo",
+          "rows": 128,
+          "wall_seconds": 14.215153069235384,
+          "rows_per_second": 9.004475673006944,
+          "preparation_seconds": 0.0009594149887561798,
+          "planning_seconds": 0.0007625175639986992,
+          "inference_seconds": 14.21338982321322,
+          "prompt_tokens": 179310,
+          "cached_tokens": 92928,
+          "cached_fraction": 0.5182533043332775,
+          "latency_p50_seconds": 0.4347610012628138,
+          "latency_p95_seconds": 0.5035277194809169,
+          "column_order": [
+            "company_policy",
+            "service_context",
+            "profile_0",
+            "profile_1",
+            "profile_2",
+            "profile_3",
+            "profile_4",
+            "profile_5",
+            "record_id",
+            "customer_request"
+          ],
+          "repeat": 0,
+          "cache_salt": "483d6c8141954c42983913886dd01eec",
+          "accuracy": 1.0
+        },
+        {
+          "method": "solo",
+          "rows": 128,
+          "wall_seconds": 14.404408157803118,
+          "rows_per_second": 8.88616863655451,
+          "preparation_seconds": 0.0006765881553292274,
+          "planning_seconds": 0.0007101073861122131,
+          "inference_seconds": 14.402978892438114,
+          "prompt_tokens": 179310,
+          "cached_tokens": 92928,
+          "cached_fraction": 0.5182533043332775,
+          "latency_p50_seconds": 0.4366109208203852,
+          "latency_p95_seconds": 0.6120597354136408,
+          "column_order": [
+            "company_policy",
+            "service_context",
+            "profile_0",
+            "profile_1",
+            "profile_2",
+            "profile_3",
+            "profile_4",
+            "profile_5",
+            "record_id",
+            "customer_request"
+          ],
+          "repeat": 1,
+          "cache_salt": "f5645701c025434f94e19e0f910f0117",
+          "accuracy": 1.0
+        },
+        {
+          "method": "original",
+          "rows": 128,
+          "wall_seconds": 22.130378416739404,
+          "rows_per_second": 5.783904711867958,
+          "preparation_seconds": 0.001874956302344799,
+          "planning_seconds": 0.00011057872325181961,
+          "inference_seconds": 22.12833890505135,
+          "prompt_tokens": 179310,
+          "cached_tokens": 0,
+          "cached_fraction": 0.0,
+          "latency_p50_seconds": 0.6860883585177362,
+          "latency_p95_seconds": 0.7158638071734458,
+          "column_order": [
+            "record_id",
+            "customer_request",
+            "company_policy",
+            "service_context",
+            "profile_0",
+            "profile_1",
+            "profile_2",
+            "profile_3",
+            "profile_4",
+            "profile_5"
+          ],
+          "repeat": 1,
+          "cache_salt": "4022601921404e459a7cceda9d9519c4",
+          "accuracy": 1.0
+        }
+      ]
+    },
+    {
+      "workload": {
+        "family": "shared_fields",
+        "target_reusable_value_token_fraction": 0.97,
+        "constant_field_token_budget": 3872,
+        "construction": "Unique ID and customer message first; eight reusable template fields, including two long global constants. Synthetic dummy padding; complete rows sent in every method.",
+        "rows": 128,
+        "columns": 10,
+        "synthetic": true,
+        "dataset_sha256": "e5795b06d87acfaf43b1c2499c35e432223dc463004d7a261a059ddbf9a9bc06",
+        "column_ndv": {
+          "record_id": 128,
+          "customer_request": 128,
+          "company_policy": 1,
+          "service_context": 1,
+          "profile_0": 4,
+          "profile_1": 8,
+          "profile_2": 16,
+          "profile_3": 32,
+          "profile_4": 64,
+          "profile_5": 64
+        },
+        "all_column_ndv_equal": false,
+        "field_token_ranges": {
+          "record_id": [
+            23,
+            34
+          ],
+          "customer_request": [
+            230,
+            241
+          ],
+          "company_policy": [
+            3872,
+            3872
+          ],
+          "service_context": [
+            3872,
+            3872
+          ],
+          "profile_0": [
+            132,
+            132
+          ],
+          "profile_1": [
+            132,
+            132
+          ],
+          "profile_2": [
+            132,
+            132
+          ],
+          "profile_3": [
+            132,
+            132
+          ],
+          "profile_4": [
+            132,
+            132
+          ],
+          "profile_5": [
+            132,
+            132
+          ]
+        },
+        "reusable_value_token_fraction": 0.97,
+        "reuse_definition": "Fraction of cell-value tokens in columns whose whole-field NDV is less than row count; this is not the prefix-cache hit rate.",
+        "prefix_distinct_counts": {
+          "original": [
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128
+          ],
+          "solo": [
+            1,
+            1,
+            4,
+            8,
+            16,
+            32,
+            64,
+            64,
+            128,
+            128
+          ]
+        },
+        "max_prompt_tokens_across_methods": 8881
+      },
+      "summary": [
+        {
+          "method": "original",
+          "rows": 128,
+          "repeats": 2,
+          "wall_seconds": 151.50681221624836,
+          "planning_seconds": 6.308825686573982e-05,
+          "prompt_tokens": 1136750.0,
+          "cached_tokens": 0.0,
+          "cached_fraction": 0.0,
+          "accuracy": 1.0,
+          "rows_per_second": 0.8448464998214293,
+          "agreement_with_original": 1.0,
+          "speedup_vs_original": 1.0,
+          "solo_speedup_vs_this_method": 7.903937912967029
+        },
+        {
+          "method": "solo",
+          "rows": 128,
+          "repeats": 2,
+          "wall_seconds": 19.16852256236598,
+          "planning_seconds": 0.000895205419510603,
+          "prompt_tokens": 1136750.0,
+          "cached_tokens": 1016928.0,
+          "cached_fraction": 0.8945924785572905,
+          "accuracy": 1.0,
+          "rows_per_second": 6.677614280576088,
+          "agreement_with_original": 1.0,
+          "speedup_vs_original": 7.903937912967029,
+          "solo_speedup_vs_this_method": 1.0
+        }
+      ],
+      "runs": [
+        {
+          "method": "original",
+          "rows": 128,
+          "wall_seconds": 151.2974149538204,
+          "rows_per_second": 0.8460157765356974,
+          "preparation_seconds": 0.0017267093062400818,
+          "planning_seconds": 5.656387656927109e-05,
+          "inference_seconds": 151.29554118961096,
+          "prompt_tokens": 1136750,
+          "cached_tokens": 0,
+          "cached_fraction": 0.0,
+          "latency_p50_seconds": 4.676185711752623,
+          "latency_p95_seconds": 4.889460154809058,
+          "column_order": [
+            "record_id",
+            "customer_request",
+            "company_policy",
+            "service_context",
+            "profile_0",
+            "profile_1",
+            "profile_2",
+            "profile_3",
+            "profile_4",
+            "profile_5"
+          ],
+          "repeat": 0,
+          "cache_salt": "a324dd37ef8745f986293d783b81dc56",
+          "accuracy": 1.0
+        },
+        {
+          "method": "solo",
+          "rows": 128,
+          "wall_seconds": 19.092849308624864,
+          "rows_per_second": 6.70408056602522,
+          "preparation_seconds": 0.0011700615286827087,
+          "planning_seconds": 0.000872073695063591,
+          "inference_seconds": 19.090682674199343,
+          "prompt_tokens": 1136750,
+          "cached_tokens": 1016928,
+          "cached_fraction": 0.8945924785572905,
+          "latency_p50_seconds": 0.46819390961900353,
+          "latency_p95_seconds": 1.3970851397607476,
+          "column_order": [
+            "company_policy",
+            "service_context",
+            "profile_0",
+            "profile_1",
+            "profile_2",
+            "profile_3",
+            "profile_4",
+            "profile_5",
+            "record_id",
+            "customer_request"
+          ],
+          "repeat": 0,
+          "cache_salt": "916ea562ea484e5eb94a3c08caed70ea",
+          "accuracy": 1.0
+        },
+        {
+          "method": "solo",
+          "rows": 128,
+          "wall_seconds": 19.244195816107094,
+          "rows_per_second": 6.651356139957066,
+          "preparation_seconds": 0.0012679435312747955,
+          "planning_seconds": 0.0009183371439576149,
+          "inference_seconds": 19.241853489540517,
+          "prompt_tokens": 1136750,
+          "cached_tokens": 1016928,
+          "cached_fraction": 0.8945924785572905,
+          "latency_p50_seconds": 0.5079086534678936,
+          "latency_p95_seconds": 1.4104190536774694,
+          "column_order": [
+            "company_policy",
+            "service_context",
+            "profile_0",
+            "profile_1",
+            "profile_2",
+            "profile_3",
+            "profile_4",
+            "profile_5",
+            "record_id",
+            "customer_request"
+          ],
+          "repeat": 1,
+          "cache_salt": "73269a0fdb3249f6b4a9df6fdf1aa1ab",
+          "accuracy": 1.0
+        },
+        {
+          "method": "original",
+          "rows": 128,
+          "wall_seconds": 151.71620947867632,
+          "rows_per_second": 0.8436804507562548,
+          "preparation_seconds": 0.0019382024183869362,
+          "planning_seconds": 6.961263716220856e-05,
+          "inference_seconds": 151.71412666607648,
+          "prompt_tokens": 1136750,
+          "cached_tokens": 0,
+          "cached_fraction": 0.0,
+          "latency_p50_seconds": 4.6801456972025335,
+          "latency_p95_seconds": 4.891390697192401,
+          "column_order": [
+            "record_id",
+            "customer_request",
+            "company_policy",
+            "service_context",
+            "profile_0",
+            "profile_1",
+            "profile_2",
+            "profile_3",
+            "profile_4",
+            "profile_5"
+          ],
+          "repeat": 1,
+          "cache_salt": "23bd4bbda29641979583a7d69dd5831f",
+          "accuracy": 1.0
+        }
+      ]
+    },
+    {
+      "workload": {
+        "family": "shared_fields",
+        "target_reusable_value_token_fraction": 0.983,
+        "constant_field_token_budget": 7237,
+        "construction": "Unique ID and customer message first; eight reusable template fields, including two long global constants. Synthetic dummy padding; complete rows sent in every method.",
+        "rows": 128,
+        "columns": 10,
+        "synthetic": true,
+        "dataset_sha256": "f25bc7b22765b95bafb27ae3704ce40e31b8bc4e5cd6ee25d03c511bb43c445e",
+        "column_ndv": {
+          "record_id": 128,
+          "customer_request": 128,
+          "company_policy": 1,
+          "service_context": 1,
+          "profile_0": 4,
+          "profile_1": 8,
+          "profile_2": 16,
+          "profile_3": 32,
+          "profile_4": 64,
+          "profile_5": 64
+        },
+        "all_column_ndv_equal": false,
+        "field_token_ranges": {
+          "record_id": [
+            23,
+            34
+          ],
+          "customer_request": [
+            230,
+            241
+          ],
+          "company_policy": [
+            7237,
+            7237
+          ],
+          "service_context": [
+            7237,
+            7237
+          ],
+          "profile_0": [
+            132,
+            132
+          ],
+          "profile_1": [
+            132,
+            132
+          ],
+          "profile_2": [
+            132,
+            132
+          ],
+          "profile_3": [
+            132,
+            132
+          ],
+          "profile_4": [
+            132,
+            132
+          ],
+          "profile_5": [
+            132,
+            132
+          ]
+        },
+        "reusable_value_token_fraction": 0.9830006439150032,
+        "reuse_definition": "Fraction of cell-value tokens in columns whose whole-field NDV is less than row count; this is not the prefix-cache hit rate.",
+        "prefix_distinct_counts": {
+          "original": [
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128
+          ],
+          "solo": [
+            1,
+            1,
+            4,
+            8,
+            16,
+            32,
+            64,
+            64,
+            128,
+            128
+          ]
+        },
+        "max_prompt_tokens_across_methods": 15611
+      },
+      "summary": [
+        {
+          "method": "original",
+          "rows": 128,
+          "repeats": 2,
+          "wall_seconds": 274.882449363824,
+          "planning_seconds": 4.954775795340538e-05,
+          "prompt_tokens": 1998190.0,
+          "cached_tokens": 0.0,
+          "cached_fraction": 0.0,
+          "accuracy": 1.0,
+          "rows_per_second": 0.4656535922763991,
+          "agreement_with_original": 1.0,
+          "speedup_vs_original": 1.0,
+          "solo_speedup_vs_this_method": 11.707030911619759
+        },
+        {
+          "method": "solo",
+          "rows": 128,
+          "repeats": 2,
+          "wall_seconds": 23.48011647351086,
+          "planning_seconds": 0.0013667745515704155,
+          "prompt_tokens": 1998190.0,
+          "cached_tokens": 1866480.0,
+          "cached_fraction": 0.9340853472392515,
+          "accuracy": 1.0,
+          "rows_per_second": 5.451420998886587,
+          "agreement_with_original": 1.0,
+          "speedup_vs_original": 11.707030911619759,
+          "solo_speedup_vs_this_method": 1.0
+        }
+      ],
+      "runs": [
+        {
+          "method": "original",
+          "rows": 128,
+          "wall_seconds": 275.1908325338736,
+          "rows_per_second": 0.46513177354570595,
+          "preparation_seconds": 0.0011975448578596115,
+          "planning_seconds": 4.332512617111206e-05,
+          "inference_seconds": 275.18948846962303,
+          "prompt_tokens": 1998190,
+          "cached_tokens": 0,
+          "cached_fraction": 0.0,
+          "latency_p50_seconds": 8.663504235446453,
+          "latency_p95_seconds": 8.688695457670837,
+          "column_order": [
+            "record_id",
+            "customer_request",
+            "company_policy",
+            "service_context",
+            "profile_0",
+            "profile_1",
+            "profile_2",
+            "profile_3",
+            "profile_4",
+            "profile_5"
+          ],
+          "repeat": 0,
+          "cache_salt": "c02a4b2c9c6e4e439e89d486f09109f0",
+          "accuracy": 1.0
+        },
+        {
+          "method": "solo",
+          "rows": 128,
+          "wall_seconds": 23.675790563225746,
+          "rows_per_second": 5.406366459366096,
+          "preparation_seconds": 0.001345306634902954,
+          "planning_seconds": 0.0011941613629460335,
+          "inference_seconds": 23.673184842802584,
+          "prompt_tokens": 1998190,
+          "cached_tokens": 1866480,
+          "cached_fraction": 0.9340853472392515,
+          "latency_p50_seconds": 0.5516993612982333,
+          "latency_p95_seconds": 2.2314216263592224,
+          "column_order": [
+            "company_policy",
+            "service_context",
+            "profile_0",
+            "profile_1",
+            "profile_2",
+            "profile_3",
+            "profile_4",
+            "profile_5",
+            "record_id",
+            "customer_request"
+          ],
+          "repeat": 0,
+          "cache_salt": "8b87489e9d50403397613a2026b25af1",
+          "accuracy": 1.0
+        },
+        {
+          "method": "solo",
+          "rows": 128,
+          "wall_seconds": 23.284442383795977,
+          "rows_per_second": 5.497232782738971,
+          "preparation_seconds": 0.0018259650096297264,
+          "planning_seconds": 0.0015393877401947975,
+          "inference_seconds": 23.280936068855226,
+          "prompt_tokens": 1998190,
+          "cached_tokens": 1866480,
+          "cached_fraction": 0.9340853472392515,
+          "latency_p50_seconds": 0.549300764221698,
+          "latency_p95_seconds": 2.358857129281387,
+          "column_order": [
+            "company_policy",
+            "service_context",
+            "profile_0",
+            "profile_1",
+            "profile_2",
+            "profile_3",
+            "profile_4",
+            "profile_5",
+            "record_id",
+            "customer_request"
+          ],
+          "repeat": 1,
+          "cache_salt": "b54b618b1fe64688a24c3ff887f02af9",
+          "accuracy": 1.0
+        },
+        {
+          "method": "original",
+          "rows": 128,
+          "wall_seconds": 274.57406619377434,
+          "rows_per_second": 0.4661765831506714,
+          "preparation_seconds": 0.0009439717978239059,
+          "planning_seconds": 5.57703897356987e-05,
+          "inference_seconds": 274.57299120817333,
+          "prompt_tokens": 1998190,
+          "cached_tokens": 0,
+          "cached_fraction": 0.0,
+          "latency_p50_seconds": 8.650064995046705,
+          "latency_p95_seconds": 8.661546867201105,
+          "column_order": [
+            "record_id",
+            "customer_request",
+            "company_policy",
+            "service_context",
+            "profile_0",
+            "profile_1",
+            "profile_2",
+            "profile_3",
+            "profile_4",
+            "profile_5"
+          ],
+          "repeat": 1,
+          "cache_salt": "163ef6f3118943d8a813c247fc34c3f1",
+          "accuracy": 1.0
+        }
+      ]
+    }
+  ]
+}

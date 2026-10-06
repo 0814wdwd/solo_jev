@@ -1,0 +1,43 @@
+{
+  "model": "autotrust/JEV-9B",
+  "revision": "b63f651ce8ed64481d3f5e73ecdb05f740042f01",
+  "vllm_version": "0.31.0",
+  "target": "One NVIDIA RTX 4090 24GB, Linux x86_64",
+  "status": "Running; decision heads and actual prefix-cache hits verified on one RTX 4090",
+  "precision": "bfloat16",
+  "backbone_bytes": 17907663080,
+  "adapter_bytes": 176641800,
+  "defaults": {
+    "max_model_len": 16384,
+    "max_num_seqs": 4,
+    "max_num_batched_tokens": 2048,
+    "gpu_memory_utilization": 0.9,
+    "enforce_eager": true,
+    "enable_prefix_caching": true,
+    "mamba_cache_mode": "align"
+  },
+  "sources": [
+    "https://huggingface.co/autotrust/JEV-9B",
+    "https://github.com/vllm-project/vllm/releases/tag/v0.31.0",
+    "https://github.com/vllm-project/vllm/blob/v0.31.0/vllm/model_executor/models/qwen3_5.py",
+    "https://docs.vllm.ai/en/v0.31.0/getting_started/installation/gpu/"
+  ],
+  "actual_runtime": {
+    "vllm": "0.31.0",
+    "torch": "2.13.0",
+    "transformers": "5.17.0",
+    "huggingface_hub": "1.33.0"
+  },
+  "service": {
+    "base_url": "http://127.0.0.1:8000",
+    "model": "jev-decision",
+    "context_tokens": 16384,
+    "precision": "bfloat16",
+    "enforce_eager": true,
+    "concurrency": 4,
+    "batch_tokens": 2048,
+    "prefix_cache_block_tokens": 528
+  },
+  "runtime_patch": "fix_vllm_warmup.py: skip the SM100-only MiniMax warmup import on RTX 4090 (SM89); see runtime-patch.json",
+  "weight_verification": "All six backbone/adapter blobs SHA256-verified against pinned Hugging Face LFS hashes"
+}

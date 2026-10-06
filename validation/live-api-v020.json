@@ -1,0 +1,133 @@
+{
+  "client_version": "0.2.0",
+  "python_version": "3.10.8",
+  "purpose": "Small live integration check; not a throughput or quality benchmark",
+  "inputs": [
+    {
+      "input": "pandas_duplicate_index",
+      "decisions": [
+        false,
+        true
+      ],
+      "probabilities": [
+        [
+          0.989230054527242,
+          0.010769945472758016
+        ],
+        [
+          0.028033326374155867,
+          0.9719666736258442
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "input": "numpy",
+      "decisions": [
+        false,
+        true
+      ],
+      "probabilities": [
+        [
+          0.9893539228096427,
+          0.010646077190357215
+        ],
+        [
+          0.02832685683413668,
+          0.9716731431658633
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "input": "record_list",
+      "decisions": [
+        false,
+        true
+      ],
+      "probabilities": [
+        [
+          0.9892921670724121,
+          0.010707832927587924
+        ],
+        [
+          0.02843433469904761,
+          0.9715656653009525
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "input": "nested_json_text",
+      "decisions": [
+        false,
+        true
+      ],
+      "probabilities": [
+        [
+          0.9921380121938606,
+          0.007861987806139347
+        ],
+        [
+          0.009930356037625526,
+          0.9900696439623744
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "input": "jsonl_path",
+      "decisions": [
+        false,
+        true
+      ],
+      "probabilities": [
+        [
+          0.9921075517968521,
+          0.007892448203147875
+        ],
+        [
+          0.010400901067364507,
+          0.9895990989326355
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "input": "parsed_json",
+      "decisions": [
+        false,
+        true
+      ],
+      "probabilities": [
+        [
+          0.9923775311137099,
+          0.007622468886290195
+        ],
+        [
+          0.010400901067364507,
+          0.9895990989326355
+        ]
+      ],
+      "passed": true
+    }
+  ],
+  "choice": [
+    "replacement",
+    "monetary refund"
+  ],
+  "score": [
+    0,
+    4
+  ],
+  "all_three_heads_valid": true,
+  "all_input_checks_passed": true,
+  "client_source_sha256": {
+    "__init__.py": "5da3748934b47ceffffeb4ffbf0b686d1150fdf99a750dceb58a4cd7b4ca59f4",
+    "_integer.py": "4b512b0d08a5f88bfa66df5940fac17f7d2b29080e2b7400237c06613469cd8d",
+    "_table.py": "956a5a2e5b6b067e550b3333a8a985a4db5bf17dec4a8234bb8403647d72ee4a",
+    "backend.py": "9aac1edd25d24d711a26a907ad06a67f0b8e1e54b4ec065c15a1d30a9288416f",
+    "engine.py": "3305f522577702d30bc0b634ad80521dabbdd255ba4a9d8d1665c5010693812d",
+    "layout.py": "b047ada72ccbe5bf739b83e337b4241d932fb2f539df30aa9c090f02c65c834e"
+  }
+}

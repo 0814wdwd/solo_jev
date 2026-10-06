@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "solo-decision"
+version = "0.2.0"
+description = "Structured input layout optimization for decision models"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Yingze Li"}, {name = "Dong Wang"}]
+keywords = ["llm", "prefix-cache", "structured-data", "decision-models", "vllm"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = ["numpy>=1.24", "numba>=0.59", "requests>=2.28"]
+
+[project.optional-dependencies]
+pandas = ["pandas>=2.0"]
+hub = ["huggingface-hub>=0.26"]
+demo = ["pandas>=2.0", "tokenizers>=0.20"]
+plot = ["matplotlib>=3.7"]
+dev = ["pytest>=7", "pandas>=2.0", "build>=1"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
