@@ -1,0 +1,13 @@
+{
+  "upstream_repository": "https://github.com/0814wdwd/solo_jev",
+  "upstream_pr": "#1: Optimize SOLO planning with reusable integer stamps",
+  "upstream_commit_reported_in_repository_page": "7a65ac2",
+  "git_history_available_in_local_snapshot": false,
+  "integer_kernel": "_integer.py copied byte-for-byte",
+  "files": {
+    "_integer.py": "4b512b0d08a5f88bfa66df5940fac17f7d2b29080e2b7400237c06613469cd8d",
+    "plan.py": "32117d40df28b52bf560e74b5d8cb31a8bdcaf812fec753ed81624b42cadb315",
+    "objective.py": "36500c61d7ebfc16982b2d09b045c00697b051028ea713eb26bbdf43a6515747"
+  },
+  "complexity": "After string encoding: exact greedy grouping O(N M^2), fixed-order partitioning O(N M), auxiliary grouping workspace O(N+M) plus encoded table O(NM). String encoding includes distinct-value sorting and reading the original text."
+}
