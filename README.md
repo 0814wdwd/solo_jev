@@ -12,9 +12,9 @@
 
 ![SOLO reorders complete records to expose shared input prefixes.](assets/layout-overview.svg)
 
-**SOLO in 75 seconds** (Mandarin narration, Chinese subtitles)
+**SOLO in 75 seconds**
 
-https://github.com/user-attachments/assets/78acca49-acc2-4c5b-a310-7c829505fd98
+https://github.com/user-attachments/assets/52b05335-46a2-4bf0-bf8f-a7a45033a8eb
 
 SOLO runs a natural-language decision over every record in your dataset.
 It arranges **rows and fields** so a prefix-caching backend can reuse more input
