@@ -18,6 +18,58 @@ from .layout import LayoutOptimizer, LayoutPlan
 
 
 @dataclass
+class RequestTrace:
+    """One request timeline, ordered by its original input row position.
+
+    Offsets use the start of :meth:`DecisionEngine.scan` as the batch-ready
+    origin. Engine intervals are optional server-reported wall-clock metrics;
+    they are not CUDA-kernel timings.
+    """
+    row_position: int
+    execution_position: int
+    submit_offset_seconds: float
+    request_start_offset_seconds: float
+    complete_offset_seconds: float
+    client_request_seconds: float
+    prompt_tokens: int | None = None
+    cached_tokens: int | None = None
+    completion_tokens: int | None = None
+    created_cache_tokens: int | None = None
+    queue_time_ms: float | None = None
+    engine_prefill_interval_ms: float | None = None
+    generation_time_ms: float | None = None
+    request_id: str | None = None
+
+    @property
+    def batch_sojourn_seconds(self):
+        return self.complete_offset_seconds
+
+    @property
+    def executor_wait_seconds(self):
+        return self.request_start_offset_seconds - self.submit_offset_seconds
+
+    def to_dict(self):
+        return {
+            "row_position": self.row_position,
+            "execution_position": self.execution_position,
+            "submit_offset_seconds": self.submit_offset_seconds,
+            "request_start_offset_seconds": self.request_start_offset_seconds,
+            "complete_offset_seconds": self.complete_offset_seconds,
+            "batch_sojourn_seconds": self.batch_sojourn_seconds,
+            "executor_wait_seconds": self.executor_wait_seconds,
+            "client_request_seconds": self.client_request_seconds,
+            "prompt_tokens": self.prompt_tokens,
+            "cached_tokens": self.cached_tokens,
+            "completion_tokens": self.completion_tokens,
+            "created_cache_tokens": self.created_cache_tokens,
+            "queue_time_ms": self.queue_time_ms,
+            "engine_prefill_interval_ms": self.engine_prefill_interval_ms,
+            "generation_time_ms": self.generation_time_ms,
+            "request_id": self.request_id,
+        }
+
+
+@dataclass
 class ScanResult:
     decisions: np.ndarray
     probabilities: np.ndarray
@@ -30,12 +82,21 @@ class ScanResult:
     cached_tokens: int | None
     latencies_seconds: np.ndarray
     index: object = None
+    completion_tokens: int | None = None
+    created_cache_tokens: int | None = None
+    request_traces: tuple[RequestTrace, ...] = ()
 
     @property
     def rows_per_second(self):
         return len(self.decisions) / self.wall_seconds if self.wall_seconds else 0.0
 
     def metrics(self):
+        def average(name, scale=1.0):
+            values = [getattr(trace, name) for trace in self.request_traces
+                      if getattr(trace, name) is not None]
+            return float(np.mean(values)) * scale if values else None
+
+        sojourn = [trace.batch_sojourn_seconds for trace in self.request_traces]
         return {
             "method": self.layout.method, "rows": len(self.decisions),
             "wall_seconds": self.wall_seconds, "rows_per_second": self.rows_per_second,
@@ -43,10 +104,17 @@ class ScanResult:
             "planning_seconds": self.layout.planning_seconds,
             "inference_seconds": self.inference_seconds,
             "prompt_tokens": self.prompt_tokens, "cached_tokens": self.cached_tokens,
+            "completion_tokens": self.completion_tokens,
+            "created_cache_tokens": self.created_cache_tokens,
             "cached_fraction": (self.cached_tokens / self.prompt_tokens
                                 if self.prompt_tokens and self.cached_tokens is not None else None),
             "latency_p50_seconds": float(np.median(self.latencies_seconds)) if len(self.decisions) else 0.0,
             "latency_p95_seconds": float(np.percentile(self.latencies_seconds, 95)) if len(self.decisions) else 0.0,
+            "batch_sojourn_p50_seconds": float(np.median(sojourn)) if sojourn else 0.0,
+            "batch_sojourn_p95_seconds": float(np.percentile(sojourn, 95)) if sojourn else 0.0,
+            "engine_queue_mean_seconds": average("queue_time_ms", .001),
+            "engine_prefill_interval_mean_seconds": average("engine_prefill_interval_ms", .001),
+            "engine_generation_mean_seconds": average("generation_time_ms", .001),
             "column_order": list(self.layout.ordered_columns),
         }
 
@@ -127,44 +195,74 @@ class DecisionEngine:
         serialize = Serializer(table, plan.column_order)
         probabilities = np.empty((n, len(spec.options)), dtype=float)
         latencies = np.empty(n, dtype=float)
+        traces = [None] * n
         preparation = time.perf_counter() - started - plan.planning_seconds
-        prompt_tokens, cached_tokens = 0, 0
-        has_prompt, has_cache = True, True
+        prompt_tokens, cached_tokens, completion_tokens, created_cache_tokens = 0, 0, 0, 0
+        has_prompt, has_cache, has_completion, has_created = True, True, True, True
 
-        def ask(i):
-            t0 = time.perf_counter()
+        def ask(i, execution_position, submitted):
+            request_started = time.perf_counter()
             response = self.backend.decide(serialize(i), spec, cache_salt=cache_salt)
+            completed = time.perf_counter()
             p = np.asarray(response.probabilities, dtype=float)
             if (p.shape != (len(spec.options),) or not np.isfinite(p).all()
                     or (p < 0).any() or not np.isclose(p.sum(), 1, atol=1e-6, rtol=0)):
                 raise ValueError("backend returned an invalid probability distribution")
-            return i, response, time.perf_counter() - t0
+            trace = RequestTrace(
+                row_position=i,
+                execution_position=execution_position,
+                submit_offset_seconds=submitted - started,
+                request_start_offset_seconds=request_started - started,
+                complete_offset_seconds=completed - started,
+                client_request_seconds=completed - request_started,
+                prompt_tokens=response.prompt_tokens,
+                cached_tokens=response.cached_tokens,
+                completion_tokens=response.completion_tokens,
+                created_cache_tokens=response.created_cache_tokens,
+                queue_time_ms=response.queue_time_ms,
+                engine_prefill_interval_ms=response.time_to_first_token_ms,
+                generation_time_ms=response.generation_time_ms,
+                request_id=response.request_id,
+            )
+            return i, response, trace
 
         inference_started = time.perf_counter()
-        jobs = iter(int(i) for i in plan.row_order)
+        jobs = iter(enumerate(int(i) for i in plan.row_order))
         pending = {}
+
+        def submit_next():
+            item = next(jobs, None)
+            if item is None:
+                return False
+            execution_position, i = item
+            submitted = time.perf_counter()
+            pending[self._pool.submit(ask, i, execution_position, submitted)] = i
+            return True
+
         try:
             for _ in range(min(self.concurrency, n)):
-                i = next(jobs)
-                pending[self._pool.submit(ask, i)] = i
+                submit_next()
             while pending:
                 done, _ = wait(pending, return_when=FIRST_COMPLETED)
                 # Sorting simultaneous completions makes refill order reproducible.
                 for future in sorted(done, key=lambda f: pending[f]):
                     i = pending.pop(future)
                     try:
-                        _, response, elapsed = future.result()
+                        _, response, trace = future.result()
                     except Exception as exc:
                         raise RuntimeError(f"decision failed at input row position {i}: {exc}") from exc
                     probabilities[i] = response.probabilities
-                    latencies[i] = elapsed
+                    latencies[i] = trace.client_request_seconds
+                    traces[i] = trace
                     has_prompt &= response.prompt_tokens is not None
                     has_cache &= response.cached_tokens is not None
+                    has_completion &= response.completion_tokens is not None
+                    has_created &= response.created_cache_tokens is not None
                     prompt_tokens += response.prompt_tokens or 0
                     cached_tokens += response.cached_tokens or 0
-                    next_i = next(jobs, None)
-                    if next_i is not None:
-                        pending[self._pool.submit(ask, next_i)] = next_i
+                    completion_tokens += response.completion_tokens or 0
+                    created_cache_tokens += response.created_cache_tokens or 0
+                    submit_next()
         finally:
             for future in pending:
                 future.cancel()
@@ -172,10 +270,22 @@ class DecisionEngine:
                 wait(pending)
         inference_seconds = time.perf_counter() - inference_started
         decisions = np.asarray(spec.options)[np.argmax(probabilities, axis=1)]
-        return ScanResult(decisions, probabilities, spec.options, plan,
-                          time.perf_counter() - started, inference_seconds, preparation,
-                          prompt_tokens if has_prompt else None, cached_tokens if has_cache else None,
-                          latencies, table.index)
+        return ScanResult(
+            decisions=decisions,
+            probabilities=probabilities,
+            options=spec.options,
+            layout=plan,
+            wall_seconds=time.perf_counter() - started,
+            inference_seconds=inference_seconds,
+            preparation_seconds=preparation,
+            prompt_tokens=prompt_tokens if has_prompt else None,
+            cached_tokens=cached_tokens if has_cache else None,
+            latencies_seconds=latencies,
+            index=table.index,
+            completion_tokens=completion_tokens if has_completion else None,
+            created_cache_tokens=created_cache_tokens if has_created else None,
+            request_traces=tuple(traces),
+        )
 
     def compare(self, data, question, *, methods=("original", "lexicographic", "random", "solo"),
                 repeats=2, truth=None, columns=None, kind="noul", options=None, seed=0, sample_size=None):

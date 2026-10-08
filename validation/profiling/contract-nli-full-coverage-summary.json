@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "measured_on": "2026-10-07",
+  "workload": {
+    "name": "ContractNLI",
+    "documents": 64,
+    "decisions": 1088,
+    "unique_rows_per_method": 1088,
+    "source_sha256": "2582ce9de1925b85bc206419d2c51cf97519835ae04eb8e931f00f29549c7366",
+    "text_truncated": false
+  },
+  "runtime": {
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "model": "JEV-9B BF16",
+    "vllm": "0.31.0",
+    "concurrency": 4,
+    "prefix_cache": true,
+    "cache_block_tokens": 528,
+    "completion_tokens_per_request": 1
+  },
+  "batching": {
+    "ready_batch_size": 64,
+    "batches": 17,
+    "coverage": "Every decision appears exactly once per layout; planning is performed independently inside each already-ready batch."
+  },
+  "quality": {
+    "original": {
+      "correct": 720,
+      "accuracy": 0.6617647058823529
+    },
+    "solo": {
+      "correct": 804,
+      "accuracy": 0.7389705882352942
+    },
+    "accuracy_delta": 0.07720588235294124,
+    "paired": {
+      "agreement": 0.7472426470588235,
+      "same_correct": 640,
+      "same_wrong": 173,
+      "solo_fixes": 164,
+      "solo_breaks": 80,
+      "both_wrong_different": 31,
+      "mcnemar_exact_two_sided_p": 8.088248458453298e-08,
+      "accuracy_delta_95_percent_normal_approximation": [
+        0.049442496545172,
+        0.10496926816071048
+      ]
+    },
+    "labels": [
+      "Entailment",
+      "Contradiction",
+      "NotMentioned"
+    ],
+    "confusion_matrices_gold_rows_prediction_columns": {
+      "original": [
+        [450, 30, 10],
+        [16, 82, 6],
+        [214, 92, 188]
+      ],
+      "solo": [
+        [398, 41, 51],
+        [8, 88, 8],
+        [81, 95, 318]
+      ]
+    }
+  },
+  "fixed_work_performance": {
+    "original_wall_seconds_sum": 293.64379544742405,
+    "solo_wall_seconds_sum": 115.7259518885985,
+    "original_rows_per_second": 3.705169381638792,
+    "solo_rows_per_second": 9.401521285798916,
+    "original_over_solo_speedup": 2.5374066115273344
+  },
+  "cache_accounting": {
+    "solo_prompt_tokens": 2222443,
+    "exact_reusable_prefix_tokens": 1893385,
+    "exact_reusable_prefix_fraction": 0.8519386098991065,
+    "block_quantized_ceiling_tokens": 1642080,
+    "block_quantized_ceiling_fraction": 0.738862594001286,
+    "measured_cached_tokens": 1610928,
+    "measured_cached_fraction": 0.7248455865909722,
+    "measured_over_block_ceiling": 0.9810289389067524,
+    "original_measured_cached_fraction": 0.0
+  },
+  "planning_scope_boundary": {
+    "description": "A separate diagnostic treated all 1,088 decisions as one global planning batch. The planner then preferred the 17-value hypothesis field before the 64 contracts, so contract prefixes were not exposed.",
+    "original_accuracy": 0.6636029411764706,
+    "solo_accuracy": 0.6571691176470589,
+    "solo_cached_fraction": 0.02020330248368273,
+    "original_wall_seconds": 292.8006931077689,
+    "solo_wall_seconds": 291.07267580367625
+  },
+  "raw_artifacts": {
+    "report": {
+      "name": "contract-nli-quality-all-batch64-cache-enabled.json",
+      "bytes": 2696566,
+      "sha256": "c0e45b24aa056683fcfb5a36240e992650c6eee275caccd675b50abbdb29a5fa"
+    },
+    "requests": {
+      "name": "contract-nli-quality-all-batch64-cache-enabled-requests.jsonl",
+      "rows": 2176,
+      "bytes": 2144100,
+      "sha256": "5f1e1c7351c21459119dab05c39d6bc9cca6bb808f46a3fdd4710041849c4d17"
+    }
+  }
+}

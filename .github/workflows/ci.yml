@@ -35,4 +35,4 @@ jobs:
           python -m venv /tmp/solo-wheel
           /tmp/solo-wheel/bin/python -m pip install dist/*.whl
           cd /tmp
-          /tmp/solo-wheel/bin/python -c 'from solo_decision import LayoutOptimizer; p = LayoutOptimizer().plan([["a", "x"], ["a", "y"]], columns=["a", "b"]); assert len(p.row_order) == 2'
+          /tmp/solo-wheel/bin/python -c 'from solo_layout import LayoutOptimizer; p = LayoutOptimizer().plan([["a", "x"], ["a", "y"]], columns=["a", "b"]); assert len(p.row_order) == 2'

@@ -39,6 +39,23 @@ each option, with the original DataFrame index where present. `result.metrics()`
 reports wall time, planning/preparation/inference time, throughput, latencies,
 input tokens and cache usage. Unknown token/cache metadata is `None`.
 
+`result.request_traces` contains one `RequestTrace` per original input row. Its
+offsets share the beginning of `scan()` as the batch-ready origin:
+
+- `submit_offset_seconds`, `request_start_offset_seconds` and
+  `complete_offset_seconds` expose client-side waiting and completion order;
+- `client_request_seconds` measures the HTTP decision call;
+- prompt, completion, cached and newly-created cache tokens come from vLLM;
+- `queue_time_ms`, `engine_prefill_interval_ms` and `generation_time_ms` are
+  optional per-request server metrics.
+
+The engine prefill interval is a server wall-clock interval from scheduling to
+the first output token, not pure CUDA-kernel time. A one-token decision normally
+has no subsequent inter-token decode interval. `latency_p95_seconds` retains the
+historical request-call definition; `batch_sojourn_p95_seconds` starts at the
+beginning of the already-ready batch and therefore includes planning and bounded
+client submission delays. Use `trace.to_dict()` when writing raw JSON reports.
+
 ### compare
 
 ```python
@@ -108,7 +125,7 @@ cached-token counts or predicted speedups. No model request is required.
 Pass `backend=your_backend` to `DecisionEngine`. Implement the following method:
 
 ```python
-from solo_decision import DecisionResponse
+from solo_layout import DecisionResponse
 
 class MyBackend:
     def decide(self, state, spec, *, cache_salt=None):
@@ -122,3 +139,18 @@ concurrently, so the backend must be thread-safe. Optional `prepare(spec)` and
 `close()` hooks support setup and cleanup. Set `supports_cache_salt=True` only if
 the service actually implements cache-namespace isolation; otherwise `compare`
 rejects the backend.
+
+Custom backends may additionally populate `DecisionResponse` fields
+`prompt_tokens`, `cached_tokens`, `completion_tokens`, `created_cache_tokens`,
+`queue_time_ms`, `time_to_first_token_ms`, `generation_time_ms`, and
+`request_id`. Missing observations should remain `None`, not zero.
+
+## vllm-jev backend
+
+`VllmJevBackend(base_url="http://127.0.0.1:8795", *, api_key=None,
+timeout=180, temperature=None, use_prefix_cache=True)` connects the engine to
+vllm-jev's `/plugins/vllm-jev/choice` route. It supports the same `noul`,
+`choice`, and six-level `score` modes by presenting their labels as ordered
+Choice candidates. Pass one `cache_salt` for related records; `compare()`
+creates a fresh salt for every independent trial. See [the deployment and
+protocol guide](vllm-jev.md).

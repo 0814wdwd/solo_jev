@@ -20,11 +20,11 @@ import numpy as np
 import pandas as pd
 from tokenizers import Tokenizer
 
-from solo_decision import DecisionEngine, DecisionSpec, LAYOUTS, LayoutOptimizer
-from solo_decision._table import Serializer, as_table
-from solo_decision._integer import PrefixGroups
-from solo_decision.layout import encode_columns
-import solo_decision
+from solo_layout import DecisionEngine, DecisionSpec, LAYOUTS, LayoutOptimizer
+from solo_layout._table import Serializer, as_table
+from solo_layout._integer import PrefixGroups
+from solo_layout.layout import encode_columns
+import solo_layout
 
 QUESTION = "Does the customer_request ask for a monetary refund?"
 POLICY = ("Staff review the complete case history and document the next step. "
@@ -40,10 +40,10 @@ def provenance(model_dir):
     versions = {}
     for name in ("numpy", "numba", "pandas", "tokenizers", "requests"):
         versions[name] = metadata.version(name)
-    package_root = Path(solo_decision.__file__).parent
+    package_root = Path(solo_layout.__file__).parent
     return {
         "started_utc": datetime.now(timezone.utc).isoformat(),
-        "client_version": solo_decision.__version__,
+        "client_version": solo_layout.__version__,
         "python_version": platform.python_version(),
         "client_dependencies": versions,
         "client_source_sha256": {p.name: hashlib.sha256(p.read_bytes()).hexdigest()

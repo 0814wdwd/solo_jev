@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "reports": [
+    {
+      "status": "complete",
+      "configuration": {
+        "workload": "contract-nli",
+        "model_dir": "JEV-9B",
+        "phase": "all",
+        "cache_mode": "enabled",
+        "methods": [
+          "original",
+          "solo"
+        ],
+        "repeats": 5,
+        "batch_sizes": [
+          8,
+          16,
+          32,
+          64
+        ],
+        "batches_per_size": 3,
+        "single_samples": 32,
+        "warmups": 2,
+        "concurrency": 4,
+        "max_prompt_tokens": 16000,
+        "seed": 42,
+        "timeout": 600.0,
+        "allow_missing_server_metrics": false,
+        "dry_run": false,
+        "data": "test-64.json",
+        "max_documents": 64
+      },
+      "provenance": {
+        "solo_decision_version": "0.2.0",
+        "python_version": "3.10.8",
+        "dependencies": {
+          "numpy": "2.2.6",
+          "numba": "0.65.0",
+          "requests": "2.34.2",
+          "tokenizers": "0.23.2"
+        },
+        "gpu": [
+          "NVIDIA GeForce RTX 4090, 24564 MiB, 595.71.05"
+        ],
+        "tokenizer_sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+        "source_sha256": {
+          "contract_nli_json": "2582ce9de1925b85bc206419d2c51cf97519835ae04eb8e931f00f29549c7366"
+        },
+        "server_claim": {
+          "prefix_cache": "enabled",
+          "per_request_metrics_expected": true,
+          "note": "Server flags are operator-supplied; archive the deployment configuration with the result."
+        }
+      },
+      "workload": {
+        "name": "contract_nli",
+        "source": {
+          "dataset": "ContractNLI",
+          "homepage": "https://stanfordnlp.github.io/contract-nli/",
+          "license": "CC BY 4.0",
+          "input_file": "test-64.json",
+          "transformation": "Full contract and all available annotated hypotheses; evidence-span prediction is out of scope."
+        },
+        "question": "What is the relationship between the contract and the stated hypothesis?",
+        "kind": "choice",
+        "options": [
+          "Entailment",
+          "Contradiction",
+          "NotMentioned"
+        ],
+        "loaded_groups": 64,
+        "usable_groups": 64,
+        "usable_rows": 1088,
+        "rejected_oversize_groups": [],
+        "representative_column_orders": {
+          "original": [
+            "record_id",
+            "hypothesis_id",
+            "hypothesis",
+            "document_id",
+            "document_type",
+            "contract_text"
+          ],
+          "solo": [
+            "document_id",
+            "document_type",
+            "contract_text",
+            "record_id",
+            "hypothesis_id",
+            "hypothesis"
+          ]
+        },
+        "selection_note": "Contract text is not truncated. MIND history length is the explicit history_items setting. No prompt is silently clipped; groups above the configured prompt limit are excluded and listed."
+      },
+      "measurement": {
+        "single": "Concurrency 1; fresh cache namespace per request; selected across the natural prompt-length distribution.",
+        "batch": "All rows are ready before planning. wall_seconds includes planning, serialization, bounded submission, inference and output restoration.",
+        "engine_intervals": "Server-reported wall-clock intervals, not summed GPU kernel time.",
+        "cache": "A fresh namespace prevents cross-trial hits but still includes the first cache fill. APC enabled/disabled requires separate server starts."
+      },
+      "single_request_count": 32,
+      "batch_run_count": 120
+    },
+    {
+      "status": "complete",
+      "configuration": {
+        "workload": "contract-nli",
+        "model_dir": "JEV-9B",
+        "phase": "batch",
+        "cache_mode": "disabled",
+        "methods": [
+          "original",
+          "solo"
+        ],
+        "repeats": 5,
+        "batch_sizes": [
+          8,
+          16,
+          32,
+          64
+        ],
+        "batches_per_size": 3,
+        "single_samples": 32,
+        "warmups": 2,
+        "concurrency": 4,
+        "max_prompt_tokens": 16000,
+        "seed": 42,
+        "timeout": 600.0,
+        "allow_missing_server_metrics": false,
+        "dry_run": false,
+        "data": "test-64.json",
+        "max_documents": 64
+      },
+      "provenance": {
+        "solo_decision_version": "0.2.0",
+        "python_version": "3.10.8",
+        "dependencies": {
+          "numpy": "2.2.6",
+          "numba": "0.65.0",
+          "requests": "2.34.2",
+          "tokenizers": "0.23.2"
+        },
+        "gpu": [
+          "NVIDIA GeForce RTX 4090, 24564 MiB, 595.71.05"
+        ],
+        "tokenizer_sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+        "source_sha256": {
+          "contract_nli_json": "2582ce9de1925b85bc206419d2c51cf97519835ae04eb8e931f00f29549c7366"
+        },
+        "server_claim": {
+          "prefix_cache": "disabled",
+          "per_request_metrics_expected": true,
+          "note": "Server flags are operator-supplied; archive the deployment configuration with the result."
+        }
+      },
+      "workload": {
+        "name": "contract_nli",
+        "source": {
+          "dataset": "ContractNLI",
+          "homepage": "https://stanfordnlp.github.io/contract-nli/",
+          "license": "CC BY 4.0",
+          "input_file": "test-64.json",
+          "transformation": "Full contract and all available annotated hypotheses; evidence-span prediction is out of scope."
+        },
+        "question": "What is the relationship between the contract and the stated hypothesis?",
+        "kind": "choice",
+        "options": [
+          "Entailment",
+          "Contradiction",
+          "NotMentioned"
+        ],
+        "loaded_groups": 64,
+        "usable_groups": 64,
+        "usable_rows": 1088,
+        "rejected_oversize_groups": [],
+        "representative_column_orders": {
+          "original": [
+            "record_id",
+            "hypothesis_id",
+            "hypothesis",
+            "document_id",
+            "document_type",
+            "contract_text"
+          ],
+          "solo": [
+            "document_id",
+            "document_type",
+            "contract_text",
+            "record_id",
+            "hypothesis_id",
+            "hypothesis"
+          ]
+        },
+        "selection_note": "Contract text is not truncated. MIND history length is the explicit history_items setting. No prompt is silently clipped; groups above the configured prompt limit are excluded and listed."
+      },
+      "measurement": {
+        "single": "Concurrency 1; fresh cache namespace per request; selected across the natural prompt-length distribution.",
+        "batch": "All rows are ready before planning. wall_seconds includes planning, serialization, bounded submission, inference and output restoration.",
+        "engine_intervals": "Server-reported wall-clock intervals, not summed GPU kernel time.",
+        "cache": "A fresh namespace prevents cross-trial hits but still includes the first cache fill. APC enabled/disabled requires separate server starts."
+      },
+      "single_request_count": 0,
+      "batch_run_count": 120
+    }
+  ]
+}

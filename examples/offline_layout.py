@@ -1,7 +1,7 @@
 """Inspect and apply a layout without a GPU, model, tokenizer, or network."""
 from pprint import pprint
 
-from solo_decision import LayoutOptimizer, read_json
+from solo_layout import LayoutOptimizer, read_json
 
 records = read_json([
     {"id": 104, "policy": "Refunds within 30 days", "account": {"tier": "gold"}, "request": "Please refund my order."},

@@ -75,6 +75,7 @@ http.server.HTTPServer(("127.0.0.1", port), Handler).serve_forever()
                 "JEV_VENV": str(venv), "JEV_MODEL_DIR": str(model),
                 "JEV_RUNTIME_DIR": str(root / "runtime"), "JEV_PORT": str(port),
                 "JEV_HOST": "127.0.0.1", "JEV_START_TIMEOUT": "5", "JEV_EAGER": "1",
+                "JEV_PER_REQUEST_METRICS": "1", "JEV_PREFIX_CACHING": "1",
                 "FAKE_ARGS": str(root / "args.json"),
             }
             with patch.dict(os.environ, environment):
@@ -86,13 +87,24 @@ http.server.HTTPServer(("127.0.0.1", port), Handler).serve_forever()
                     self.assertEqual(control.start(), 0)
                     self.assertEqual(control.read_record(), record)
                     arguments = json.loads((root / "args.json").read_text())
-                    for flag in ("--enable-prefix-caching", "--enforce-eager", "--enable-lora"):
+                    for flag in ("--enable-prefix-caching", "--enable-per-request-metrics",
+                                 "--enforce-eager", "--enable-lora"):
                         self.assertIn(flag, arguments)
+                    self.assertNotIn("--no-enable-prefix-caching", arguments)
                     self.assertEqual(arguments[arguments.index("--mamba-cache-mode") + 1], "align")
                 finally:
                     control.stop()
                 self.assertFalse(control.healthy())
                 self.assertFalse(control.RECORD.exists())
+                os.environ["JEV_PREFIX_CACHING"] = "0"
+                try:
+                    self.assertEqual(control.start(), 0)
+                    arguments = json.loads((root / "args.json").read_text())
+                    self.assertIn("--no-enable-prefix-caching", arguments)
+                    self.assertNotIn("--enable-prefix-caching", arguments)
+                    self.assertNotIn("--mamba-cache-mode", arguments)
+                finally:
+                    control.stop()
                 unrelated = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(20)"],
                                              start_new_session=True)
                 try:

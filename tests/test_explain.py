@@ -4,7 +4,7 @@ from os.path import commonprefix
 import numpy as np
 import pytest
 
-from solo_decision import DecisionEngine, LayoutOptimizer, read_json
+from solo_layout import DecisionEngine, LayoutOptimizer, read_json
 
 
 def test_prefix_group_curve_captures_correlation_beyond_marginal_ndv():

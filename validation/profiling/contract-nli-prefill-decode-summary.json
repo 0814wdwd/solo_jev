@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "workload": {
+    "name": "ContractNLI",
+    "decisions_per_layout": 1088,
+    "layouts": 2,
+    "total_request_measurements": 2176
+  },
+  "runtime": {
+    "model": "JEV-9B BF16",
+    "gpu": [
+      "NVIDIA GeForce RTX 4090, 24564 MiB, 595.71.05"
+    ],
+    "concurrency": 4,
+    "prefix_cache": "enabled",
+    "quality_batch_size": 64
+  },
+  "definitions": {
+    "prefill_and_first_token": "vLLM time_to_first_token_ms: scheduled to first output token; includes prefill and production of the first decision token",
+    "decode_after_first_token": "vLLM generation_time_ms: first output token to last output token",
+    "aggregation": "component means use the same requests and are additive; percentiles are reported separately and are not stacked"
+  },
+  "methods": {
+    "original": {
+      "requests": 1088,
+      "completion_tokens": {
+        "sum": 1088,
+        "min_per_request": 1,
+        "max_per_request": 1
+      },
+      "client": {
+        "mean_ms": 1060.9024150848306,
+        "median_ms": 975.8065515197814,
+        "p95_ms": 1935.0267600268123,
+        "min_ms": 471.069622784853,
+        "max_ms": 2395.758776925504
+      },
+      "queue": {
+        "mean_ms": 134.04355079760802,
+        "median_ms": 0.01804763451218605,
+        "p95_ms": 643.9639425836504,
+        "min_ms": 0.012849457561969757,
+        "max_ms": 1087.1511492878199
+      },
+      "prefill_and_first_token": {
+        "mean_ms": 740.2167816925452,
+        "median_ms": 726.1426220647991,
+        "p95_ms": 1103.3087802585214,
+        "min_ms": 272.94712606817484,
+        "max_ms": 1748.7001307308674
+      },
+      "decode_after_first_token": {
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p95_ms": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0
+      },
+      "client_and_other": {
+        "mean_ms": 186.64208259467748,
+        "median_ms": 202.73708505555987,
+        "p95_ms": 236.36002358980468,
+        "min_ms": 13.371930457651615,
+        "max_ms": 267.8163228556514
+      }
+    },
+    "solo": {
+      "requests": 1088,
+      "completion_tokens": {
+        "sum": 1088,
+        "min_per_request": 1,
+        "max_per_request": 1
+      },
+      "client": {
+        "mean_ms": 417.8713153095861,
+        "median_ms": 331.9242591969669,
+        "p95_ms": 807.3389070108527,
+        "min_ms": 133.80200788378716,
+        "max_ms": 1382.058127783239
+      },
+      "queue": {
+        "mean_ms": 29.80185290952624,
+        "median_ms": 0.026769470423460007,
+        "p95_ms": 200.4738150164485,
+        "min_ms": 0.012435950338840485,
+        "max_ms": 930.9774739667773
+      },
+      "prefill_and_first_token": {
+        "mean_ms": 269.6527414219043,
+        "median_ms": 219.2610981874168,
+        "p95_ms": 567.361862072721,
+        "min_ms": 103.69434300810099,
+        "max_ms": 1167.1013729646802
+      },
+      "decode_after_first_token": {
+        "mean_ms": 0.0,
+        "median_ms": 0.0,
+        "p95_ms": 0.0,
+        "min_ms": 0.0,
+        "max_ms": 0.0
+      },
+      "client_and_other": {
+        "mean_ms": 118.41672097815557,
+        "median_ms": 123.20609530434012,
+        "p95_ms": 200.4375492222606,
+        "min_ms": 13.167014345526695,
+        "max_ms": 255.57297002524137
+      }
+    }
+  },
+  "comparison": {
+    "prefill_first_token_median_speedup": 3.311771345066043,
+    "prefill_first_token_mean_speedup": 2.7450741935324388,
+    "client_mean_speedup": 2.538825653296746,
+    "all_decode_measurements_zero": true
+  }
+}

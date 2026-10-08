@@ -15,8 +15,8 @@ import uuid
 import numpy as np
 import pandas as pd
 
-import solo_decision
-from solo_decision import DecisionEngine, read_json
+import solo_layout
+from solo_layout import DecisionEngine, read_json
 
 
 def main():
@@ -64,9 +64,9 @@ def main():
                                 kind="score", cache_salt=uuid.uuid4().hex)
             assert score.probabilities.shape == (2, 6)
             assert np.all((score.decisions >= 0) & (score.decisions <= 5))
-    package = Path(solo_decision.__file__).parent
+    package = Path(solo_layout.__file__).parent
     report = {
-        "client_version": solo_decision.__version__, "python_version": platform.python_version(),
+        "client_version": solo_layout.__version__, "python_version": platform.python_version(),
         "purpose": "Small live integration check; not a throughput or quality benchmark",
         "inputs": checks, "choice": choice.decisions.tolist(), "score": score.decisions.tolist(),
         "all_three_heads_valid": True, "all_input_checks_passed": True,

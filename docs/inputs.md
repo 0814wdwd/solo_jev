@@ -23,7 +23,7 @@ also accepts parsed JSON objects or lists of objects and returns a reusable
 ## JSON and nested values
 
 ```python
-from solo_decision import DecisionEngine, read_json
+from solo_layout import DecisionEngine, read_json
 
 records = read_json([
     {"id": 104, "customer": {"tier": "gold", "region": "north"},

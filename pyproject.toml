@@ -3,9 +3,9 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "solo-decision"
+name = "solo-layout"
 version = "0.2.0"
-description = "Structured input layout optimization for decision models"
+description = "SOLO — System One Layout Optimizer: input layout optimization for decision models"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"

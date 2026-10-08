@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from solo_decision import DecisionEngine, DecisionResponse, JSONInput, LayoutOptimizer, read_json
-from solo_decision._table import Serializer, as_table
+from solo_layout import DecisionEngine, DecisionResponse, JSONInput, LayoutOptimizer, read_json
+from solo_layout._table import Serializer, as_table
 
 
 def render(data):

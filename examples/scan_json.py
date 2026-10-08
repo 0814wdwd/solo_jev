@@ -3,7 +3,7 @@ import argparse
 import json
 from pathlib import Path
 
-from solo_decision import DecisionEngine, read_json
+from solo_layout import DecisionEngine, read_json
 
 
 def main():

@@ -5,10 +5,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from solo_decision import LAYOUTS, LayoutOptimizer
-from solo_decision._integer import PrefixGroups
-from solo_decision.layout import encode_columns
-from solo_decision._table import as_table
+from solo_layout import LAYOUTS, LayoutOptimizer
+from solo_layout._integer import PrefixGroups
+from solo_layout.layout import encode_columns
+from solo_layout._table import as_table
 
 
 def oracle(rows):

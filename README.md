@@ -1,18 +1,22 @@
 <div align="center">
 
-# SOLO Decision
+# SOLO — System One Layout Optimizer
 
-**Structured Input Layout Optimizer for Decision Models**
+**Input layout optimization for decision models**
 
 ### Put repeated context first. Make your decision model do less work.
 
-[Pandas · NumPy · JSON](docs/inputs.md) · [Quickstart](#quickstart) · [Benchmarks](#two-reproducible-demos) · [Deploy JEV-9B](docs/deployment.md) · [API](docs/api.md) · [Cite](#citation) · [中文介绍](docs/README.zh-CN.md)
+[Pandas · NumPy · JSON](docs/inputs.md) · [Quickstart](#quickstart) · [Benchmarks](#two-reproducible-demos) · [Profiling protocol](docs/profiling.md) · [Deploy JEV-9B](docs/deployment.md) · [Open-Jev adapter](docs/vllm-jev.md) · [API](docs/api.md) · [Cite](#citation) · [中文介绍](docs/README.zh-CN.md)
 
 </div>
 
 ![SOLO reorders complete records to expose shared input prefixes.](assets/layout-overview.svg)
 
-SOLO Decision runs a natural-language decision over every record in your dataset.
+**SOLO in 75 seconds** (Mandarin narration, Chinese subtitles)
+
+https://github.com/user-attachments/assets/78acca49-acc2-4c5b-a310-7c829505fd98
+
+SOLO runs a natural-language decision over every record in your dataset.
 It arranges **rows and fields** so a prefix-caching backend can reuse more input
 computation, then returns decisions in your original row order. The backend
 receives the **complete record on every request**.
@@ -40,7 +44,7 @@ This installs the client. For inference, connect to a running JEV-9B service or
 
 ```python
 import pandas as pd
-from solo_decision import DecisionEngine
+from solo_layout import DecisionEngine
 
 tickets = pd.DataFrame([
     {"id": "T-104", "policy": "Refunds within 30 days", "request": "Please refund my order."},
@@ -65,7 +69,7 @@ python examples/offline_layout.py
 
 ```python
 from pathlib import Path
-from solo_decision import DecisionEngine
+from solo_layout import DecisionEngine
 
 with DecisionEngine() as engine:
     result = engine.scan(Path("tickets.jsonl"), "Does this customer request a refund?")
@@ -73,6 +77,38 @@ with DecisionEngine() as engine:
 
 JSON text, JSON/JSONL files, nested objects, DataFrames, and NumPy arrays share the
 same engine. See the [input contract](docs/inputs.md) for schema and type rules.
+
+## Why can a one-token decision still be slow?
+
+A decision model may return only one label, but it must first process the full
+contract, policy, user context or candidate. On JEV-9B, median request latency
+rose from 0.280 seconds at roughly 1K input tokens to 0.897 seconds at 6.5K,
+even though every request produced exactly one token.
+
+SOLO keeps every field and leaves the model unchanged. It reorganizes repeated
+content inside an already-ready batch so the inference server can reuse more of
+the input. Across all 1,088 decisions from 64 selected ContractNLI contracts,
+original-order accuracy was 66.18%; SOLO reached **73.90%**. Completing the same
+17 batches of 64 took 293.64 seconds with the original layout and 115.73 seconds
+with SOLO—a **2.54×** speedup.
+
+The server timings show where that reduction happens. The median interval from
+scheduling to the first decision token fell from **726.1 ms to 219.3 ms
+(3.31×)**. Every request emits one decision token, so the subsequent decode
+interval was **0.0 ms** in all 2,176 original/SOLO request measurements.
+
+![Prefill and decode profile before and after SOLO](assets/profiling/contract-nli-prefill-decode.svg)
+
+![Full-coverage quality, completion time and cache accounting](assets/profiling/contract-nli-full-coverage.svg)
+
+The speedup disappears when APC is disabled. With APC enabled, 85.19% of SOLO
+prompt tokens had an earlier exact prefix, 73.89% remained reusable after
+528-token block quantization, and vLLM reported 72.48% actually cached—98.1% of
+the block-level ceiling.
+
+[Full protocol, cache controls and statistics](docs/profiling.md) ·
+[Timing aggregate](validation/profiling/contract-nli-prefill-decode-summary.json) ·
+[Full-coverage aggregate](validation/profiling/contract-nli-full-coverage-summary.json)
 
 ## Two reproducible demos
 
@@ -140,7 +176,7 @@ python demo.py --model-dir /path/to/JEV-9B --workload correlated \
 Inspect layouts locally before running inference:
 
 ```python
-from solo_decision import LayoutOptimizer
+from solo_layout import LayoutOptimizer
 
 report = LayoutOptimizer().explain(tickets)
 print(report.to_pandas())
@@ -190,12 +226,36 @@ exact greedy grouping costs **O(NM²)** time and **O(N + M)** auxiliary space,
 besides the compact **O(NM)** encoded table. Fixed-order row grouping is O(NM).
 [Implementation and provenance](docs/architecture.md)
 
-## JEV-9B backend and deployment
+## Decision backends and deployment
+
+SOLO now has two prefix-cache-aware clients: the measured AutoTrust JEV-9B
+backend below, and `VllmJevBackend` for the open-source
+[vllm-jev](https://github.com/mode-io/vllm-jev) framework. The first vllm-jev
+target is [Open-Jev-2B](https://huggingface.co/ZefanCai/Open-Jev-2B):
+
+```python
+from solo_layout import DecisionEngine, VllmJevBackend
+
+backend = VllmJevBackend("http://127.0.0.1:8795")
+with DecisionEngine(backend=backend) as engine:
+    result = engine.scan(rows, question, cache_salt="arrived-batch-42")
+```
+
+The adapter calls vllm-jev's Choice plugin with one shared cache namespace for
+the batch, while preserving SOLO's serialized field order. See the
+[setup and selection notes](docs/vllm-jev.md).
+
+On the 64-row shared-policy microbenchmark, SOLO raised reported cached input
+from **45.78% to 91.59%** and reduced median batch time from **5.448 s to
+3.254 s (1.67×)**. With prefix reads disabled, the two layouts were within
+2.6%. [Configuration and raw results](docs/vllm-jev.md#live-rtx-4090-validation)
+
+### AutoTrust JEV-9B
 
 Our experiments use **[autotrust/JEV-9B](https://huggingface.co/autotrust/JEV-9B)**,
 AutoTrust's independent open reproduction of TypeSafe Jev's decision behavior.
 AutoTrust provides the Qwen3.5-9B backbone, trained decision adapter and
-calibration metadata; SOLO Decision provides the input-layout optimizer and
+calibration metadata; SOLO provides the input-layout optimizer and
 table/JSON execution interface.
 
 | Resource | Where to find it |
@@ -203,7 +263,7 @@ table/JSON execution interface.
 | Upstream model, code and weights | [AutoTrust JEV-9B repository](https://huggingface.co/autotrust/JEV-9B/tree/main) |
 | Upstream serving protocol | [JEV-9B vLLM quickstart](https://huggingface.co/autotrust/JEV-9B#quickstart-with-vllm-recommended) |
 | Our pinned download and 4090 launch configuration | [Download](deploy/download.py), [serving flags](deploy/serve.sh), [model revision](deploy/deployment.json) |
-| Our decision client | [JevBackend](src/solo_decision/backend.py) |
+| Our decision client | [JevBackend](src/solo_layout/backend.py) |
 
 We load the upstream `adapter_vllm` adapter into vLLM as `jev-decision` and enable
 prefix caching. The client sends a complete record to `/v1/completions`, obtains
@@ -224,11 +284,7 @@ context limit and concurrency 4. See [deployment requirements, reuse of existing
 weights, and health checks](docs/deployment.md).
 
 SOLO is useful when complete records contain reusable prefixes after reordering
-and prefill is a meaningful part of execution time. Short inputs, mostly unique
-fields, high concurrency, cache eviction or an unavailable prefix cache can
-reduce the benefit. Changing field order can also change a model's predictions;
-check accuracy and agreement on your task. Current throughput evidence covers
-the two synthetic workloads above, not a production dataset or every backend.
+and prefill is a meaningful part of execution time.
 
 ## Development and research credit
 
@@ -245,7 +301,7 @@ GPU deployment tools remain in the source distribution. See
 
 ## Citation
 
-SOLO Decision builds on our **ICML 2026** paper. If you find this project useful
+SOLO builds on our **ICML 2026** paper. If you find this project useful
 in your research, please consider citing our work:
 
 **[Prefix-Cache-Aware Data Reordering for LLM-Augmented Database Analytics](https://proceedings.mlr.press/v306/li26gn.html)**  
@@ -266,7 +322,7 @@ Yingze Li, Dong Wang, Yiming Guo, Yao Chen, Hongzhi Wang, and Bingsheng He.
 }
 ```
 
-Thank you for supporting our research! Please also report the SOLO Decision
+Thank you for supporting our research! Please also report the SOLO
 version used in your experiments to help others reproduce your results.
 
 [Citation metadata](CITATION.cff) · [Planner provenance](planner-provenance.json) ·

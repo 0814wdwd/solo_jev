@@ -1,6 +1,6 @@
 # Contributing
 
-SOLO Decision is a research prototype with a small Python client and an optional
+SOLO — System One Layout Optimizer is a research prototype with a small Python client and an optional
 GPU backend. Install the client from a source checkout:
 
 ```bash

@@ -23,7 +23,7 @@ Our integration follows the upstream
    [deployment.json](../deploy/deployment.json).
 2. [Start vLLM](../deploy/serve.sh) with the `jev-decision` LoRA adapter,
    `--enable-prefix-caching` and `--mamba-cache-mode align`.
-3. [JevBackend](../src/solo_decision/backend.py) builds the upstream `bare-v1`
+3. [JevBackend](../src/solo_layout/backend.py) builds the upstream `bare-v1`
    decision prompt and calls `/v1/completions` with `max_tokens=1` and the allowed
    option token IDs. It adds the head bias from `adapter_vllm/decision_head.json`,
    divides by the per-kind temperature from `calibration.json`, and applies
@@ -132,11 +132,30 @@ Defaults include:
 | `JEV_BATCH_TOKENS` | `2048` |
 | `JEV_GPU_MEMORY_UTILIZATION` | `0.90` |
 | `JEV_EAGER` | `1` |
+| `JEV_PREFIX_CACHING` | `1` |
+| `JEV_PER_REQUEST_METRICS` | `0` |
 | `JEV_START_TIMEOUT` | `600` seconds |
 
 The tested hybrid-model prefix-cache mode is `align`. Changing runtime flags can
 change memory use and throughput; keep them fixed within a layout comparison.
 Clients use the served adapter name `jev-decision`, not the base-model name.
+
+Set `JEV_PER_REQUEST_METRICS=1` for diagnostic runs that need vLLM queue and
+first-token intervals. Keep a separate metrics-disabled run to quantify its CPU
+overhead. The cache/layout causal comparison requires two real server starts:
+
+```bash
+bash deploy/jev9b.sh stop
+JEV_PREFIX_CACHING=1 JEV_PER_REQUEST_METRICS=1 bash deploy/jev9b.sh start
+# run the cache-enabled report, then stop the server
+
+bash deploy/jev9b.sh stop
+JEV_PREFIX_CACHING=0 JEV_PER_REQUEST_METRICS=1 bash deploy/jev9b.sh start
+# run the cache-disabled report
+```
+
+A fresh `cache_salt` isolates matches between trials but does not disable APC or
+isolate GPU contention. Do not treat namespace isolation as the cache-off arm.
 
 ## Runtime compatibility patch
 

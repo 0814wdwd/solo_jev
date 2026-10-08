@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from solo_decision import DecisionEngine, DecisionResponse, DecisionSpec, LAYOUTS
+from solo_layout import DecisionEngine, DecisionResponse, DecisionSpec, LAYOUTS
 
 
 class FakeBackend:
@@ -29,7 +29,11 @@ class FakeBackend:
             if row["amount"] == "ERROR":
                 raise ValueError("intentional failure")
             p = (0.05, 0.95) if int(row["amount"]) > 1 else (0.9, 0.1)
-            return DecisionResponse(p, 100, 50)
+            return DecisionResponse(
+                p, 100, 50, completion_tokens=1, created_cache_tokens=25,
+                queue_time_ms=2.0, time_to_first_token_ms=3.0,
+                generation_time_ms=0.0, request_id=f"request-{row['amount']}",
+            )
         finally:
             with self.lock:
                 self.active -= 1
@@ -52,6 +56,17 @@ def test_complete_cells_original_positions_duplicate_index_and_bounded_requests(
     assert sent == expected
     assert backend.peak <= 2 and backend.closed
     assert result.prompt_tokens == 500 and result.cached_tokens == 250
+    assert result.completion_tokens == 5 and result.created_cache_tokens == 125
+    assert len(result.request_traces) == len(frame)
+    assert [trace.row_position for trace in result.request_traces] == list(range(len(frame)))
+    assert sorted(trace.execution_position for trace in result.request_traces) == list(range(len(frame)))
+    assert all(trace.complete_offset_seconds >= trace.request_start_offset_seconds
+               >= trace.submit_offset_seconds >= 0 for trace in result.request_traces)
+    metrics = result.metrics()
+    assert metrics["engine_queue_mean_seconds"] == pytest.approx(.002)
+    assert metrics["engine_prefill_interval_mean_seconds"] == pytest.approx(.003)
+    assert metrics["engine_generation_mean_seconds"] == 0.0
+    assert metrics["batch_sojourn_p95_seconds"] >= metrics["latency_p50_seconds"]
 
 
 def test_compare_uses_fresh_namespaces_and_reversed_order():
@@ -91,7 +106,9 @@ def test_missing_usage_is_unknown():
     with DecisionEngine(backend=Backend()) as engine:
         result = engine.scan([[1]], "question")
     assert result.prompt_tokens is None and result.cached_tokens is None
+    assert result.completion_tokens is None and result.created_cache_tokens is None
     assert result.metrics()["cached_fraction"] is None
+    assert result.metrics()["engine_prefill_interval_mean_seconds"] is None
 
 
 def test_large_input_does_not_enqueue_one_future_per_row():

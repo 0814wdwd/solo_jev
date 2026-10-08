@@ -11,3 +11,36 @@ deploy/.venv/
 .env.*
 !.env.example
 *.log
+
+# Local publication drafts
+/docs/SOLO-Decision公众号推文.md
+/docs/SOLO-Decision公众号推文.pdf
+/SOLO_SystemOne_公众号推文_v*.pdf
+/SOLO_SystemOne_公众号素材包*.zip
+/solo-decision.zip
+
+# Local rendered media
+/demo-video/rendered/
+
+# Large/raw profiling artifacts; commit the compact reports and figures instead.
+/validation/profiling/*-requests.jsonl
+/validation/profiling/contract-nli-cache-enabled.json
+/validation/profiling/contract-nli-cache-disabled.json
+/validation/profiling/contract-nli-quality-all-batch64-cache-enabled.json
+/validation/profiling/contract-nli-quality-full-cache-enabled.json
+/validation/profiling/*.gz
+/validation/profiling/contract-nli-pilot-*.json
+/validation/profiling/figures/*.png
+/validation/profiling/figures/*.pdf
+/validation/profiling/figures/*.svg
+
+# Local demo-video review packages
+SOLO_demo视频_*.zip
+/SOLO_SystemOne_公众号_v*
+/SOLO_SystemOne_公众号推文_*.docx
+/docs/SOLO-Decision_公众号推文_*.docx
+/docs/figures/
+/demo-video/
+/scripts/update_article_prefill_profile.py
+/third_party/jeff/
+/data/synthetic.csv

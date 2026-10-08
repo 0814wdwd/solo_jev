@@ -12,6 +12,22 @@ JEV_EXTRA_ARGS=()
 if [[ "${JEV_EAGER:-1}" == 1 ]]; then
     JEV_EXTRA_ARGS+=(--enforce-eager)
 fi
+if [[ "${JEV_PREFIX_CACHING:-1}" == 1 ]]; then
+    JEV_EXTRA_ARGS+=(--enable-prefix-caching --mamba-cache-mode align)
+elif [[ "${JEV_PREFIX_CACHING:-1}" == 0 ]]; then
+    # vLLM can resolve an unspecified value to enabled for hybrid/Mamba
+    # models, so the cache-disabled control must be explicit.
+    JEV_EXTRA_ARGS+=(--no-enable-prefix-caching)
+else
+    printf 'JEV_PREFIX_CACHING must be 0 or 1.\n' >&2
+    exit 1
+fi
+if [[ "${JEV_PER_REQUEST_METRICS:-0}" == 1 ]]; then
+    JEV_EXTRA_ARGS+=(--enable-per-request-metrics)
+elif [[ "${JEV_PER_REQUEST_METRICS:-0}" != 0 ]]; then
+    printf 'JEV_PER_REQUEST_METRICS must be 0 or 1.\n' >&2
+    exit 1
+fi
 exec "$JEV_VENV/bin/vllm" serve "$JEV_MODEL_DIR" \
     --served-model-name autotrust/JEV-9B \
     --host "${JEV_HOST:-127.0.0.1}" --port "${JEV_PORT:-8000}" \
@@ -20,7 +36,6 @@ exec "$JEV_VENV/bin/vllm" serve "$JEV_MODEL_DIR" \
     --lora-modules "jev-decision=$JEV_MODEL_DIR/adapter_vllm" \
     --logprobs-mode processed_logprobs --max-logprobs 16 \
     --enable-prompt-tokens-details --disable-uvicorn-access-log \
-    --enable-prefix-caching --mamba-cache-mode align \
     --max-model-len "${JEV_MAX_MODEL_LEN:-16384}" \
     --max-num-seqs "${JEV_MAX_NUM_SEQS:-4}" \
     --max-num-batched-tokens "${JEV_BATCH_TOKENS:-2048}" \

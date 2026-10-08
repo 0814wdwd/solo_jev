@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "measured_on": "2026-10-07",
+  "server_state_after_run": "vLLM stopped; GPU memory released",
+  "remote_root": "/root/autodl-tmp/solo_jev_profile/validation/profiling",
+  "note": "The repository stores compact reports without batch-level per-request traces. These hashes identify the complete measurement-host archive; none of these artifacts contains contract text.",
+  "artifacts": [
+    {
+      "name": "contract-nli-cache-enabled.json",
+      "bytes": 4387934,
+      "sha256": "d8b5aa6b964b494963cef707f90be305296edf8607a6b47b491e250f3810c7cc"
+    },
+    {
+      "name": "contract-nli-cache-enabled-requests.jsonl",
+      "bytes": 3769374,
+      "sha256": "01533d1aaf4d44615e5dbb07580aee3c53cf0d5ead134b62c34d639e0d0b9cb3"
+    },
+    {
+      "name": "contract-nli-cache-disabled.json",
+      "bytes": 4305583,
+      "sha256": "03c65528cf4a0517e1356baf96af444b3a6aac3d73c6c0938fdd758dd8a17617"
+    },
+    {
+      "name": "contract-nli-cache-disabled-requests.jsonl",
+      "bytes": 3736292,
+      "sha256": "e8b754411cbf7238d886811ee988433d79bfaf51bdd3b934a695d96486f8efd8"
+    },
+    {
+      "name": "server-cache-enabled.log",
+      "bytes": 33446,
+      "sha256": "512394ea4bc5a779847388cd79211b20a266e18b25f348e7878ae3e509ff77c2"
+    },
+    {
+      "name": "server-cache-disabled.log",
+      "bytes": 90328,
+      "sha256": "df5db33614cacecd251dff6fa48392e1dfffab7164f04c34b1bc23e4d1a3cb18"
+    },
+    {
+      "name": "contract-nli-quality-all-batch64-cache-enabled.json",
+      "bytes": 2696566,
+      "sha256": "c0e45b24aa056683fcfb5a36240e992650c6eee275caccd675b50abbdb29a5fa"
+    },
+    {
+      "name": "contract-nli-quality-all-batch64-cache-enabled-requests.jsonl",
+      "bytes": 2144100,
+      "sha256": "5f1e1c7351c21459119dab05c39d6bc9cca6bb808f46a3fdd4710041849c4d17"
+    },
+    {
+      "name": "contract-nli-quality-full-cache-enabled.json",
+      "bytes": 2428990,
+      "sha256": "d04d504a2591f995c4605a481af0c4619d9f55744cc8a81eeb98320335b7d7c1"
+    },
+    {
+      "name": "contract-nli-quality-full-cache-enabled-requests.jsonl",
+      "bytes": 2086892,
+      "sha256": "6dc921a12904e250c667089d9404405029d253b56f812eaba566060a4272dc0c"
+    }
+  ]
+}

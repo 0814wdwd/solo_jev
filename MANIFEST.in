@@ -10,6 +10,8 @@ recursive-include assets *.svg *.png *.gif *.pdf
 recursive-include examples *.py *.json *.jsonl
 recursive-include scripts *.py
 recursive-include validation *.json
+exclude docs/SOLO-Decision公众号推文.md
+exclude docs/SOLO-Decision公众号推文.pdf
 recursive-exclude deploy/runtime *
 recursive-exclude deploy/models *
 recursive-exclude deploy/.venv *

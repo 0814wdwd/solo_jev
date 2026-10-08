@@ -78,9 +78,17 @@ A failed request reports its original row position and is not silently turned
 into a negative decision. The client drains active requests before returning an
 error. Use the engine as a context manager to close its executor and connections.
 
+`VllmJevBackend` is the second transport. It sends the complete serialized state
+to vllm-jev's Choice plugin and maps its ordered candidate probabilities back to
+SOLO's binary, categorical, or score options. Its explicit `cache_salt` keeps a
+batch in one prefix-cache namespace. The System One compatibility route is not
+used because it creates a new namespace per request. Candidate token totals are
+reported by the server and summed by the client; the pooling route emits no
+autoregressive completion token.
+
 ## Scope
 
-This release implements a client library and a single tested model backend. The
-standalone layout plan is reusable with other services, but each backend's
-prefix-cache behavior and decision quality need separate validation. The original
-research probes and calibration experiments remain outside the client wheel.
+This release implements the measured AutoTrust JEV-9B transport and a
+protocol-tested vllm-jev transport for Open-Jev-2B. The standalone layout plan
+remains reusable with other decision services. The original research probes and
+calibration experiments remain outside the client wheel.
