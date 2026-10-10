@@ -70,7 +70,7 @@ class LayoutPlan:
             if tuple(data.dtype.names) != self.columns:
                 raise ValueError("plan and structured-array columns differ")
             return data[self.row_order][list(self.ordered_columns)].copy()
-        if len(data) and isinstance(data[0], dict):
+        if len(data) and isinstance(data[0], Mapping):
             keys = list(data[0])
             if tuple(map(str, keys)) != self.columns or any(set(row) != set(keys) for row in data):
                 raise ValueError("plan and record fields differ")
@@ -116,7 +116,8 @@ class LayoutOptimizer:
     def __init__(self, method="solo", *, seed=0, sample_size=None):
         if method not in LAYOUTS:
             raise ValueError(f"unknown layout {method!r}; choose from {LAYOUTS}")
-        if sample_size is not None and (not isinstance(sample_size, int) or sample_size < 1):
+        if sample_size is not None and (not isinstance(sample_size, int) or isinstance(sample_size, bool)
+                                        or sample_size < 1):
             raise ValueError("sample_size must be a positive integer or None")
         self.method, self.seed, self.sample_size = method, seed, sample_size
 

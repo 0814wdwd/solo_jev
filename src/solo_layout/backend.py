@@ -108,7 +108,8 @@ class JevBackend:
 
     def __init__(self, base_url="http://127.0.0.1:8000", *, model="jev-decision",
                  model_dir=None, api_key=None, timeout=180):
-        if not math.isfinite(timeout) or timeout <= 0:
+        if (isinstance(timeout, bool) or not isinstance(timeout, Real)
+                or not math.isfinite(timeout) or timeout <= 0):
             raise ValueError("timeout must be positive and finite")
         root = base_url.rstrip("/")
         self.endpoint = root + ("/completions" if root.endswith("/v1") else "/v1/completions")
