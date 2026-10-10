@@ -122,3 +122,18 @@ def test_record_layout_preserves_non_string_keys_and_rejects_mismatched_schema()
         plan.apply([{"wrong": "b"}, {"wrong": "a"}])
     with pytest.raises(ValueError):
         LayoutOptimizer().plan(pd.DataFrame({"a": [1]}), columns=["renamed"])
+
+
+def test_apply_accepts_the_same_mapping_records_as_plan():
+    from types import MappingProxyType
+    records = [MappingProxyType({"a": "z", "b": "1"}), MappingProxyType({"a": "a", "b": "2"})]
+    plan = LayoutOptimizer().plan(records)
+    applied = plan.apply(records)
+    assert [list(row) for row in applied] == [list(plan.ordered_columns)] * 2
+    assert [row["a"] for row in applied] == [records[int(i)]["a"] for i in plan.row_order]
+
+
+@pytest.mark.parametrize("sample_size", [True, False, 0, -1, 2.0])
+def test_sample_size_rejects_booleans_and_non_positive_values(sample_size):
+    with pytest.raises(ValueError, match="sample_size"):
+        LayoutOptimizer(sample_size=sample_size)

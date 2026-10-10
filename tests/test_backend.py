@@ -171,3 +171,10 @@ def test_vllm_jev_rejects_malformed_responses(body, message, monkeypatch):
     monkeypatch.setattr(backend, "_session", lambda: Session())
     with pytest.raises(RuntimeError, match=message):
         backend.decide("complete state", DecisionSpec.create("question"))
+
+
+@pytest.mark.parametrize("backend", [JevBackend, VllmJevBackend])
+@pytest.mark.parametrize("timeout", [True, "5", 0, -1, float("inf"), float("nan")])
+def test_backends_validate_timeout_the_same_way(backend, timeout):
+    with pytest.raises(ValueError, match="timeout"):
+        backend(timeout=timeout)
