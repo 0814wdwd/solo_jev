@@ -14,6 +14,12 @@ import numpy as np
 
 def _json_value(value):
     """Validate and copy JSON values, retaining object and array semantics."""
+    # NumPy scalars and arrays commonly reach records through pandas; convert
+    # them to the equivalent Python values instead of rejecting or truncating.
+    if isinstance(value, np.ndarray):
+        return _json_value(value.tolist())
+    if isinstance(value, np.generic):
+        return _json_value(value.item())
     if value is None or isinstance(value, (str, bool, int)):
         return value
     if isinstance(value, float):
@@ -188,12 +194,14 @@ def as_table(data, columns=None) -> Table:
     # Flat table inputs keep the existing str(cell) serialization byte for
     # byte. JSON sources retain scalar types. Nested cells in table inputs
     # remain JSON objects/arrays while their scalar siblings keep str(cell).
-    json_values = native_json or any(isinstance(value, (Mapping, list)) for value in values.flat)
+    # NumPy array cells are nested arrays too: str() would elide large arrays.
+    nested = (Mapping, list, np.ndarray)
+    json_values = native_json or any(isinstance(value, nested) for value in values.flat)
     for i in range(values.shape[0]):
         for c in range(values.shape[1]):
             value = values[i, c]
             if json_values:
-                value = _json_value(value) if native_json or isinstance(value, (Mapping, list)) else str(value)
+                value = _json_value(value) if native_json or isinstance(value, nested) else str(value)
                 values[i, c] = json.dumps(value, ensure_ascii=False, sort_keys=True,
                                          separators=(",", ":"), allow_nan=False)
             else:

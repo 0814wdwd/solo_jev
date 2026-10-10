@@ -53,7 +53,7 @@ ambiguities visible before inference.
 For compatibility with the measured table benchmarks, scalar cells in
 DataFrames, NumPy arrays and direct lists of dictionaries use `str(value)` and
 are serialized as JSON strings. For example, an integer `1` becomes `"1"` and
-`None` becomes `"None"`. Nested dict/list cells are emitted as nested canonical
+`None` becomes `"None"`. Nested dict/list/NumPy-array cells are emitted as nested canonical
 JSON instead of Python representations. Use `read_json(parsed_records)` when
 native JSON scalar types are required.
 

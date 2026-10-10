@@ -137,3 +137,21 @@ def test_empty_json_and_empty_objects():
     assert isinstance(LayoutOptimizer().plan("[]").apply("[]"), JSONInput)
     assert len(LayoutOptimizer().plan("[]").apply("[]")) == 0
     assert len(read_json("\n", lines=True)) == 0
+
+
+def test_numpy_array_cells_are_complete_nested_arrays():
+    # str(ndarray) elides long arrays with "...", which would drop input and
+    # make distinct rows look identical to the planner.
+    frame = pd.DataFrame({"id": [1, 2], "vector": [np.arange(2000), np.arange(2000) + 1]})
+    rendered = render(frame)
+    assert rendered[0] == {"id": "1", "vector": list(range(2000))}
+    assert rendered[1]["vector"] == list(range(1, 2001))
+    assert render([{"m": np.array([[1, 2], [3, 4]])}]) == [{"m": [[1, 2], [3, 4]]}]
+
+
+def test_numpy_scalars_inside_nested_values_are_json_scalars():
+    records = [{"details": {"count": np.int64(3), "ok": np.bool_(True), "x": np.float32(0.5)}}]
+    assert render(records) == [{"details": {"count": 3, "ok": True, "x": 0.5}}]
+    assert render(read_json(records)) == [{"details": {"count": 3, "ok": True, "x": 0.5}}]
+    with pytest.raises(ValueError):
+        read_json([{"x": np.float64("nan")}])
